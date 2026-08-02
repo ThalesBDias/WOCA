@@ -15,6 +15,7 @@
     "speciality": "Weapon Specialist",
     "valid": true,
     "wounds": 9,
+    "xp_spent": 0,
     "xp_remaining": 600
   },
   "character": {
@@ -33,6 +34,7 @@
     "manual_adjustments": {},
     "name": "New Character",
     "player_name": "",
+    "purchased_advances": [],
     "regiment": {
       "name": "13th Varanox Light Infantry",
       "resolutions": {},
@@ -93,11 +95,12 @@
         "lasgun"
       ]
     },
-    "version": 1,
+    "version": 2,
     "wounds_roll": 2
   },
   "character_rules_content_version": "0.1.0-core-guardsmen",
+  "advancement_rules_content_version": "0.2.0-core-guardsman-xp-test",
   "format": "owca_character",
   "saved_at_utc": "2026-08-02T05:53:53",
-  "version": 1
+  "version": 2
 }

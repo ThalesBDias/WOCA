@@ -6,7 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-No changes recorded yet.
+### Added
+
+- Added a **Spend Starting XP** character-creation stage with separate Characteristic, Skill, and Talent browsers.
+- Added the Core Aptitude-matched cost tables for all four Characteristic ranks, all four Skill ranks, and all three Talent tiers.
+- Added all nine Characteristic advancement tracks and the Core Skill categories/specialisations currently relevant to OWCA.
+- Added a curated Core Talent advancement catalog covering the five Guardsman Specialities' recommended advances and Weapon Training prerequisite chains.
+- Added specialty recommendation markers, source/page references, affordability feedback, and unmet-prerequisite explanations to advancement cards.
+- Added an ordered purchase ledger with per-purchase XP costs and removal controls.
+- Added headless tests for Aptitude pricing, sequential Skill and Characteristic costs, Talent prerequisites, affordability, invalidated dependencies, and XP save/load.
+
+### Changed
+
+- Character calculations now apply purchased Characteristic, Skill, Talent, and Sound Constitution Wound advances to the live summary and derived values.
+- Character JSON saves now use format/state version 2, record the advancement-data content version, and remain compatible with version 1 character files.
+- Character summaries and status panels now show XP spent, remaining, and total.
+
+### Known limitations
+
+- The v0.4 Talent browser is a focused Guardsman testing catalog, not every Talent in the Core Rulebook.
+- Printable character-sheet PDF export is not implemented yet.
+- Only the five Core Guardsman Specialities are available for character testing.
+- OWCA intentionally does not roll dice.
 
 ## [0.3.0] - 2026-08-02
 
@@ -48,4 +69,3 @@ No changes recorded yet.
 - Printable character-sheet PDF export is not implemented yet.
 - Only the five Core Guardsman Specialities are available for character testing.
 - OWCA intentionally does not roll dice.
-

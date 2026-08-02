@@ -3,13 +3,14 @@ extends Control
 ## Functional testing UI for the five Core Guardsman Specialities.
 
 const LANDING_SCENE := "res://OWCA/ui/LandingPage.tscn"
-const STAGE_ORDER: Array[String] = ["regiment", "characteristics", "speciality", "choices", "derived", "review"]
+const STAGE_ORDER: Array[String] = ["regiment", "characteristics", "speciality", "choices", "derived", "xp", "review"]
 const STAGE_LABELS := {
 	"regiment": "Load Regiment",
 	"characteristics": "Characteristics",
 	"speciality": "Guardsman Speciality",
 	"choices": "Character Choices",
 	"derived": "Wounds, Fate & Movement",
+	"xp": "Spend Starting XP",
 	"review": "Review"
 }
 const ABBREVIATIONS := {
@@ -36,6 +37,7 @@ var calculator := CharacterCalculator.new()
 var state := CharacterState.new()
 var calculation: Dictionary = {}
 var active_stage: String = "regiment"
+var advancement_filter: String = "characteristic"
 var action_message: String = "Load a saved regiment to begin. Dice are entered from physical or Discord rolls."
 
 var name_edit: LineEdit
@@ -106,7 +108,7 @@ func _build_header() -> Control:
 	title.add_theme_color_override("font_color", COLOUR_GOLD)
 	title_column.add_child(title)
 	var subtitle := Label.new()
-	subtitle.text = "GUARDSMAN CREATION TEST  |  v0.3"
+	subtitle.text = "GUARDSMAN CREATION TEST  |  v0.4 DEV"
 	subtitle.add_theme_font_size_override("font_size", 11)
 	subtitle.add_theme_color_override("font_color", COLOUR_MUTED)
 	title_column.add_child(subtitle)
@@ -166,7 +168,7 @@ func _build_workspace() -> Control:
 	navigation_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	navigation.add_child(navigation_spacer)
 	var scope_note := Label.new()
-	scope_note.text = "Testing scope:\n5 Core Guardsman Specialities\nNo in-app dice rolling\nNo XP purchases or PDF yet"
+	scope_note.text = "Testing scope:\n5 Core Guardsman Specialities\n600 XP advancement stage\nCurated Core Talent list\nNo dice rolling or PDF yet"
 	scope_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	scope_note.add_theme_font_size_override("font_size", 11)
 	scope_note.add_theme_color_override("font_color", COLOUR_MUTED)
@@ -288,6 +290,7 @@ func _render_stage_buttons() -> void:
 	(stage_buttons["speciality"] as Button).text = "Guardsman Speciality\n%s" % ("1/1 selected" if not state.speciality_id.is_empty() else "0/1 selected")
 	(stage_buttons["choices"] as Button).text = "Character Choices\n%d/%d resolved" % [mini(resolved, total_choices), total_choices]
 	(stage_buttons["derived"] as Button).text = "Wounds, Fate & Movement\n%d/2 rolls entered" % derived_count
+	(stage_buttons["xp"] as Button).text = "Spend Starting XP\n%d purchase(s) | %d XP left" % [state.purchased_advances.size(), int(calculation.get("xp_remaining", 0))]
 	(stage_buttons["review"] as Button).text = "Review\n%s" % ("ready" if calculation.get("valid", false) else "incomplete")
 
 
@@ -307,6 +310,8 @@ func _render_active_stage() -> void:
 			_render_choices_stage()
 		"derived":
 			_render_derived_stage()
+		"xp":
+			_render_xp_stage()
 		"review":
 			_render_review_stage()
 
@@ -553,13 +558,119 @@ func _render_derived_stage() -> void:
 	_update_derived_output()
 
 
+func _render_xp_stage() -> void:
+	stage_content.add_child(_wrapped_label("Spend up to the available starting XP. Costs update from the character's Aptitudes and current ranks. Purchases are replayed in order, so prerequisites must be bought first.", COLOUR_MUTED))
+	var metrics := _make_panel(COLOUR_PANEL, COLOUR_GOLD, 9)
+	stage_content.add_child(metrics)
+	var metric_row := HBoxContainer.new()
+	metric_row.add_theme_constant_override("separation", 18)
+	metrics.add_child(metric_row)
+	metric_row.add_child(_notice_label("BUDGET  %d XP" % int(calculation.get("xp_budget", 0)), COLOUR_TEXT))
+	metric_row.add_child(_notice_label("SPENT  %d XP" % int(calculation.get("xp_spent", 0)), COLOUR_GOLD))
+	metric_row.add_child(_notice_label("REMAINING  %d XP" % int(calculation.get("xp_remaining", 0)), COLOUR_GOOD if int(calculation.get("xp_remaining", 0)) >= 0 else COLOUR_BAD))
+
+	stage_content.add_child(_section_label("PURCHASE LEDGER"))
+	var purchases := calculation.get("purchased_advances", []) as Array
+	if purchases.is_empty():
+		stage_content.add_child(_wrapped_label("No advances purchased yet. Unspent XP is allowed.", COLOUR_MUTED))
+	else:
+		for purchase: Dictionary in purchases:
+			stage_content.add_child(_build_purchase_row(purchase))
+
+	stage_content.add_child(HSeparator.new())
+	var filters := HBoxContainer.new()
+	filters.add_theme_constant_override("separation", 7)
+	stage_content.add_child(filters)
+	var filter_group := ButtonGroup.new()
+	for filter_kind in ["characteristic", "skill", "talent"]:
+		var filter_button := Button.new()
+		filter_button.text = filter_kind.to_upper()
+		filter_button.toggle_mode = true
+		filter_button.button_group = filter_group
+		filter_button.button_pressed = advancement_filter == filter_kind
+		filter_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		filter_button.pressed.connect(_select_advancement_filter.bind(filter_kind))
+		filters.add_child(filter_button)
+
+	if not bool(calculation.get("advancement_ready", false)):
+		stage_content.add_child(_notice_label("Resolve the Speciality, all nine Characteristics, and all character choices before buying advances.", COLOUR_BAD))
+
+	var visible_options := 0
+	for option: Dictionary in calculation.get("advancement_options", []):
+		if str(option.get("kind", "")) != advancement_filter:
+			continue
+		visible_options += 1
+		stage_content.add_child(_build_advancement_card(option))
+	if visible_options == 0:
+		stage_content.add_child(_wrapped_label("No advancements are available in this category.", COLOUR_MUTED))
+
+
+func _build_purchase_row(purchase: Dictionary) -> Control:
+	var valid := bool(purchase.get("valid", false))
+	var panel := _make_panel(COLOUR_PANEL, COLOUR_BORDER if valid else COLOUR_BAD, 7)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+	panel.add_child(row)
+	var label := Label.new()
+	label.text = "%d. %s — %s — %d XP" % [int(purchase.get("index", 0)) + 1, purchase.get("name", "Advance"), purchase.get("rank_label", ""), int(purchase.get("cost", 0))]
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_color_override("font_color", COLOUR_TEXT if valid else COLOUR_BAD)
+	row.add_child(label)
+	var remove := _make_action_button("REMOVE", _remove_advance.bind(int(purchase.get("index", -1))))
+	remove.custom_minimum_size.y = 32
+	row.add_child(remove)
+	if not valid:
+		var reason := Label.new()
+		reason.text = str(purchase.get("reason", "Invalid purchase"))
+		reason.add_theme_color_override("font_color", COLOUR_BAD)
+		reason.tooltip_text = reason.text
+		row.add_child(reason)
+	return panel
+
+
+func _build_advancement_card(option: Dictionary) -> Control:
+	var available := bool(option.get("available", false))
+	var recommended := bool(option.get("recommended", false))
+	var border := COLOUR_GOLD if recommended else COLOUR_BORDER
+	var card := _make_panel(COLOUR_PANEL, border, 8)
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 4)
+	card.add_child(column)
+	var top := HBoxContainer.new()
+	column.add_child(top)
+	var title := Label.new()
+	title.text = "%s%s" % [str(option.get("name", "Advancement")), "  ★ RECOMMENDED" if recommended else ""]
+	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", COLOUR_GOLD if recommended else COLOUR_TEXT)
+	top.add_child(title)
+	var buy := _make_action_button("BUY  %d XP" % int(option.get("cost", 0)), _purchase_advance.bind(str(option.get("id", ""))))
+	buy.disabled = not available
+	buy.custom_minimum_size.y = 34
+	top.add_child(buy)
+	var matched: Array[String] = []
+	for aptitude: Variant in option.get("matched_aptitudes", []):
+		matched.append(str(aptitude))
+	var aptitudes: Array[String] = []
+	for aptitude: Variant in option.get("aptitudes", []):
+		aptitudes.append(str(aptitude))
+	column.add_child(_wrapped_label("%s  |  Aptitudes: %s  |  Matches: %d (%s)" % [option.get("rank_label", ""), " + ".join(aptitudes), int(option.get("match_count", 0)), ", ".join(matched) if not matched.is_empty() else "none"], COLOUR_MUTED))
+	if str(option.get("kind", "")) == "talent":
+		column.add_child(_wrapped_label("Prerequisites: %s" % option.get("prerequisite_label", "None"), COLOUR_MUTED))
+	if not available:
+		column.add_child(_notice_label(str(option.get("reason", "Unavailable.")), COLOUR_BAD))
+	column.add_child(_notice_label(str(option.get("source_label", "")), COLOUR_MUTED))
+	return card
+
+
 func _render_review_stage() -> void:
 	var heading := Label.new()
 	heading.text = "CHARACTER BUILD %s" % ("READY" if calculation.get("valid", false) else "INCOMPLETE")
 	heading.add_theme_font_size_override("font_size", 22)
 	heading.add_theme_color_override("font_color", COLOUR_GOOD if calculation.get("valid", false) else COLOUR_BAD)
 	stage_content.add_child(heading)
-	stage_content.add_child(_wrapped_label("The live summary shows the current calculated character. Character JSON save/load is available now; starting XP purchases and printable PDF export are the next slices.", COLOUR_MUTED))
+	stage_content.add_child(_wrapped_label("The live summary includes the ordered XP ledger. Character JSON save/load preserves all purchases; printable PDF export remains the next development slice.", COLOUR_MUTED))
 	var save_button := _make_action_button("SAVE CHARACTER JSON", _request_character_save)
 	save_button.custom_minimum_size.y = 46
 	stage_content.add_child(save_button)
@@ -603,7 +714,7 @@ func _update_derived_output() -> void:
 	else:
 		lines.append("Movement: Half %s | Full %s | Charge %s | Run %s" % [movement.get("half", "-"), movement.get("full", "-"), movement.get("charge", "-"), movement.get("run", "-")])
 	lines.append("")
-	lines.append("Wounds = Speciality base + entered 1d5 + regiment modifier (%s)." % _signed(int(calculation.get("wounds_modifier", 0))))
+	lines.append("Wounds = Speciality base + entered 1d5 + regiment modifier (%s) + advances (%s)." % [_signed(int(calculation.get("wounds_modifier", 0))), _signed(int(calculation.get("advancement_wounds_bonus", 0)))])
 	derived_output.text = "\n".join(lines)
 
 
@@ -627,7 +738,7 @@ func _render_summary() -> void:
 	lines.append("[color=#d5b35b][b]WOUNDS[/b][/color] %s    [color=#d5b35b][b]FATE[/b][/color] %s" % [str(calculation.get("wounds", 0)) if state.wounds_roll > 0 and not state.speciality_id.is_empty() else "-", str(calculation.get("fate_points", 0)) if state.fate_roll > 0 else "-"])
 	if not movement.is_empty():
 		lines.append("[color=#d5b35b][b]MOVE[/b][/color] %s / %s / %s / %s" % [movement.get("half"), movement.get("full"), movement.get("charge"), movement.get("run")])
-	lines.append("[color=#d5b35b][b]XP[/b][/color] %d available" % int(calculation.get("xp_remaining", 0)))
+	lines.append("[color=#d5b35b][b]XP[/b][/color] %d spent / %d available / %d total" % [int(calculation.get("xp_spent", 0)), int(calculation.get("xp_remaining", 0)), int(calculation.get("xp_budget", 0))])
 
 	lines.append("\n[color=#d5b35b][b]SKILLS[/b][/color]")
 	var skills: Array[String] = []
@@ -642,6 +753,13 @@ func _render_summary() -> void:
 	lines.append(", ".join(talents) if not talents.is_empty() else "-")
 	if int(calculation.get("bonus_xp", 0)) > 0:
 		lines.append("Duplicate Talent compensation: +%d XP" % int(calculation.get("bonus_xp", 0)))
+
+	lines.append("\n[color=#d5b35b][b]PURCHASED ADVANCES[/b][/color]")
+	var advances: Array[String] = []
+	for purchase: Dictionary in calculation.get("purchased_advances", []):
+		var marker := "" if bool(purchase.get("valid", false)) else " [INVALID]"
+		advances.append("%s — %s (%d XP)%s" % [purchase.get("name", "Advance"), purchase.get("rank_label", ""), int(purchase.get("cost", 0)), marker])
+	lines.append("\n".join(advances) if not advances.is_empty() else "-")
 
 	lines.append("\n[color=#d5b35b][b]APTITUDES[/b][/color]")
 	lines.append(", ".join(calculation.get("aptitudes", []) as Array) if not (calculation.get("aptitudes", []) as Array).is_empty() else "-")
@@ -669,7 +787,7 @@ func _render_summary() -> void:
 func _render_status() -> void:
 	status_label.text = "VALID GUARDSMAN" if calculation.get("valid", false) else "INCOMPLETE / INVALID"
 	status_label.add_theme_color_override("font_color", COLOUR_GOOD if calculation.get("valid", false) else COLOUR_BAD)
-	xp_label.text = "STARTING XP  %d / %d" % [calculation.get("xp_remaining", 0), calculation.get("xp_budget", 600)]
+	xp_label.text = "STARTING XP  %d REMAINING / %d" % [calculation.get("xp_remaining", 0), calculation.get("xp_budget", 600)]
 	xp_label.add_theme_color_override("font_color", COLOUR_GOLD)
 	var notices: Array[String] = []
 	if not action_message.is_empty():
@@ -681,7 +799,7 @@ func _render_status() -> void:
 	for warning: Variant in calculation.get("warnings", []):
 		notices.append("[color=#a5ad9d]WARNING - %s[/color]" % _escape_bbcode(str(warning)))
 	if calculation.get("valid", false):
-		notices.append("[color=#84c58a]All inputs and starting choices are resolved.[/color]")
+		notices.append("[color=#84c58a]All inputs, choices, and recorded XP purchases are valid.[/color]")
 	notices_text.text = "\n".join(notices)
 
 
@@ -756,6 +874,30 @@ func _on_wounds_roll_changed(value: float) -> void:
 func _on_fate_roll_changed(value: float) -> void:
 	state.fate_roll = int(value)
 	_refresh(false)
+
+
+func _select_advancement_filter(kind: String) -> void:
+	advancement_filter = kind
+	_render_active_stage()
+
+
+func _purchase_advance(advance_id: String) -> void:
+	for option: Dictionary in calculation.get("advancement_options", []):
+		if str(option.get("id", "")) == advance_id and bool(option.get("available", false)):
+			state.purchase_advance(advance_id)
+			action_message = "Purchased %s for %d XP." % [option.get("name", "advance"), int(option.get("cost", 0))]
+			_refresh()
+			return
+	action_message = "That advancement is no longer available."
+	_refresh()
+
+
+func _remove_advance(index: int) -> void:
+	if index < 0 or index >= state.purchased_advances.size():
+		return
+	state.remove_advance_at(index)
+	action_message = "Removed XP purchase. Later prerequisites and costs were recalculated."
+	_refresh()
 
 
 func _request_regiment_load() -> void:
