@@ -58,6 +58,7 @@ On a fresh clone, let Godot build its generated global-class cache before runnin
 godot --headless --editor --path . --quit
 godot --headless --path . --script res://OWCA/tests/regiment_calculator_test.gd
 godot --headless --path . --script res://OWCA/tests/character_calculator_test.gd
+godot --headless --path . --script res://OWCA/tests/character_ui_layout_test.gd
 ```
 
 The Regiment Creator resolves only regiment-wide decisions. Choices marked `per_character` are listed as deferred benefits, do not prevent a regiment from being valid, and are not answered or stored as resolutions in the regiment file. The file carries a snapshot of those choice definitions for the future Character Creator.
@@ -69,6 +70,8 @@ Duplicate starting Skills advance from Known through Trained (+10), Experienced 
 The Guardsman Character Creator loads an `.owreg.json` regiment, accepts manually rolled base Characteristics, applies shared and individual modifiers, resolves regiment and Speciality choices, and calculates Wounds, Fate Points, Characteristic Bonuses, and Movement. It combines Skills, Talents, Aptitudes, rules, and equipment into one live summary and saves versioned `.owchar.json` character files. Dice remain physical or Discord rolls.
 
 The development v0.4 slice adds an ordered starting-XP ledger. It calculates Characteristic, Skill, and Talent costs from matching Aptitudes; enforces sequential Characteristic and Skill ranks; checks Talent prerequisites; prevents overspending; and recalculates later purchases when an earlier one is removed. Character saves preserve the ledger and remain backward-compatible with v0.3 files. All nine Characteristics and the Core Skill categories used by this project are available. Talents are deliberately limited to the five Guardsman Specialities' Core recommended advances plus the Weapon Training groups needed to test their prerequisite chains. This is not yet a complete Core Talent browser.
+
+The character workflow is responsive down to a 960×650 minimum window. Advancement actions remain inside their cards, horizontal stage scrolling is disabled, and the live-summary column automatically hides below 1100 pixels so the active form keeps usable space.
 
 Printable character-sheet PDF export is the next planned development slice.
 

@@ -51,6 +51,10 @@ var xp_label: Label
 var notices_text: RichTextLabel
 var characteristic_output_labels: Dictionary = {}
 var derived_output: RichTextLabel
+var navigation_panel: PanelContainer
+var content_panel: PanelContainer
+var summary_panel: PanelContainer
+var responsive_note: Label
 var regiment_load_dialog: FileDialog
 var character_save_dialog: FileDialog
 var character_load_dialog: FileDialog
@@ -70,6 +74,7 @@ func _ready() -> void:
 
 
 func _build_interface() -> void:
+	get_window().min_size = Vector2i(960, 650)
 	var background := ColorRect.new()
 	background.color = COLOUR_BACKGROUND
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -90,6 +95,8 @@ func _build_interface() -> void:
 	page.add_child(_build_workspace())
 	page.add_child(_build_status_panel())
 	_build_dialogs()
+	resized.connect(_apply_responsive_layout)
+	_apply_responsive_layout.call_deferred()
 
 
 func _build_header() -> Control:
@@ -146,7 +153,7 @@ func _build_workspace() -> Control:
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	row.add_theme_constant_override("separation", 10)
 
-	var navigation_panel := _make_panel(COLOUR_PANEL, COLOUR_BORDER, 8)
+	navigation_panel = _make_panel(COLOUR_PANEL, COLOUR_BORDER, 8)
 	navigation_panel.custom_minimum_size.x = 205
 	row.add_child(navigation_panel)
 	var navigation := VBoxContainer.new()
@@ -173,8 +180,13 @@ func _build_workspace() -> Control:
 	scope_note.add_theme_font_size_override("font_size", 11)
 	scope_note.add_theme_color_override("font_color", COLOUR_MUTED)
 	navigation.add_child(scope_note)
+	responsive_note = Label.new()
+	responsive_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	responsive_note.add_theme_font_size_override("font_size", 10)
+	responsive_note.add_theme_color_override("font_color", COLOUR_GOLD)
+	navigation.add_child(responsive_note)
 
-	var content_panel := _make_panel(COLOUR_PANEL_ALT, COLOUR_BORDER, 8)
+	content_panel = _make_panel(COLOUR_PANEL_ALT, COLOUR_BORDER, 8)
 	content_panel.custom_minimum_size.x = 475
 	content_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content_panel.size_flags_stretch_ratio = 1.05
@@ -186,13 +198,14 @@ func _build_workspace() -> Control:
 	content_column.add_child(stage_title)
 	var content_scroll := ScrollContainer.new()
 	content_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	content_column.add_child(content_scroll)
 	stage_content = VBoxContainer.new()
 	stage_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	stage_content.add_theme_constant_override("separation", 9)
 	content_scroll.add_child(stage_content)
 
-	var summary_panel := _make_panel(COLOUR_PANEL, COLOUR_BORDER, 8)
+	summary_panel = _make_panel(COLOUR_PANEL, COLOUR_BORDER, 8)
 	summary_panel.custom_minimum_size.x = 485
 	summary_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	summary_panel.size_flags_stretch_ratio = 1.2
@@ -207,6 +220,29 @@ func _build_workspace() -> Control:
 	summary_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	summary_column.add_child(summary_text)
 	return row
+
+
+func _apply_responsive_layout() -> void:
+	if navigation_panel == null or content_panel == null or summary_panel == null:
+		return
+	var window_width := size.x
+	if window_width < 1100.0:
+		navigation_panel.custom_minimum_size.x = 170
+		content_panel.custom_minimum_size.x = 0
+		summary_panel.visible = false
+		responsive_note.text = "Narrow layout: live summary hidden; widen the window to restore it."
+	elif window_width < 1360.0:
+		navigation_panel.custom_minimum_size.x = 180
+		content_panel.custom_minimum_size.x = 360
+		summary_panel.custom_minimum_size.x = 360
+		summary_panel.visible = true
+		responsive_note.text = "Compact three-panel layout"
+	else:
+		navigation_panel.custom_minimum_size.x = 205
+		content_panel.custom_minimum_size.x = 475
+		summary_panel.custom_minimum_size.x = 485
+		summary_panel.visible = true
+		responsive_note.text = ""
 
 
 func _build_status_panel() -> Control:
@@ -608,12 +644,17 @@ func _render_xp_stage() -> void:
 func _build_purchase_row(purchase: Dictionary) -> Control:
 	var valid := bool(purchase.get("valid", false))
 	var panel := _make_panel(COLOUR_PANEL, COLOUR_BORDER if valid else COLOUR_BAD, 7)
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 4)
+	panel.add_child(column)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
-	panel.add_child(row)
+	column.add_child(row)
 	var label := Label.new()
 	label.text = "%d. %s — %s — %d XP" % [int(purchase.get("index", 0)) + 1, purchase.get("name", "Advance"), purchase.get("rank_label", ""), int(purchase.get("cost", 0))]
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.custom_minimum_size.x = 0
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_color_override("font_color", COLOUR_TEXT if valid else COLOUR_BAD)
 	row.add_child(label)
@@ -623,9 +664,10 @@ func _build_purchase_row(purchase: Dictionary) -> Control:
 	if not valid:
 		var reason := Label.new()
 		reason.text = str(purchase.get("reason", "Invalid purchase"))
+		reason.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		reason.add_theme_color_override("font_color", COLOUR_BAD)
 		reason.tooltip_text = reason.text
-		row.add_child(reason)
+		column.add_child(reason)
 	return panel
 
 
@@ -634,21 +676,20 @@ func _build_advancement_card(option: Dictionary) -> Control:
 	var recommended := bool(option.get("recommended", false))
 	var border := COLOUR_GOLD if recommended else COLOUR_BORDER
 	var card := _make_panel(COLOUR_PANEL, border, 8)
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 4)
 	card.add_child(column)
-	var top := HBoxContainer.new()
-	column.add_child(top)
 	var title := Label.new()
-	title.text = "%s%s" % [str(option.get("name", "Advancement")), "  ★ RECOMMENDED" if recommended else ""]
+	title.text = str(option.get("name", "Advancement"))
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	title.custom_minimum_size.x = 0
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.add_theme_font_size_override("font_size", 16)
 	title.add_theme_color_override("font_color", COLOUR_GOLD if recommended else COLOUR_TEXT)
-	top.add_child(title)
-	var buy := _make_action_button("BUY  %d XP" % int(option.get("cost", 0)), _purchase_advance.bind(str(option.get("id", ""))))
-	buy.disabled = not available
-	buy.custom_minimum_size.y = 34
-	top.add_child(buy)
+	column.add_child(title)
+	if recommended:
+		column.add_child(_notice_label("★ RECOMMENDED FOR THIS SPECIALITY", COLOUR_GOLD))
 	var matched: Array[String] = []
 	for aptitude: Variant in option.get("matched_aptitudes", []):
 		matched.append(str(aptitude))
@@ -661,6 +702,11 @@ func _build_advancement_card(option: Dictionary) -> Control:
 	if not available:
 		column.add_child(_notice_label(str(option.get("reason", "Unavailable.")), COLOUR_BAD))
 	column.add_child(_notice_label(str(option.get("source_label", "")), COLOUR_MUTED))
+	var buy := _make_action_button("BUY FOR %d XP" % int(option.get("cost", 0)), _purchase_advance.bind(str(option.get("id", ""))))
+	buy.disabled = not available
+	buy.custom_minimum_size.y = 42
+	buy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	column.add_child(buy)
 	return card
 
 

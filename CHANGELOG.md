@@ -15,12 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Added specialty recommendation markers, source/page references, affordability feedback, and unmet-prerequisite explanations to advancement cards.
 - Added an ordered purchase ledger with per-purchase XP costs and removal controls.
 - Added headless tests for Aptitude pricing, sequential Skill and Characteristic costs, Talent prerequisites, affordability, invalidated dependencies, and XP save/load.
+- Added a headless responsive-layout regression test at 960, 1090, and 1280 pixel window widths.
 
 ### Changed
 
 - Character calculations now apply purchased Characteristic, Skill, Talent, and Sound Constitution Wound advances to the live summary and derived values.
 - Character JSON saves now use format/state version 2, record the advancement-data content version, and remain compatible with version 1 character files.
 - Character summaries and status panels now show XP spent, remaining, and total.
+- Advancement cards now use a vertically stacked action layout, and narrow windows automatically reclaim the live-summary column for the active creation stage.
+
+### Fixed
+
+- Fixed long advancement names pushing the Buy button outside the visible centre panel and requiring horizontal scrolling.
 
 ### Known limitations
 
