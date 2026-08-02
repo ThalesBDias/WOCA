@@ -34,6 +34,8 @@ OWCA/
     character_calculator.gd     Character aggregation and validation
     character_advancement_calculator.gd Ordered XP ledger and purchase validation
     character_persistence.gd    Character JSON save/load
+    character_sheet_exporter.gd Off-screen A4 page rendering and export orchestration
+    pdf_image_writer.gd         Dependency-free image-to-PDF writer
   ui/
     landing_page.gd             Landing-page controller
     LandingPage.tscn            Main scene and workflow selection
@@ -41,9 +43,11 @@ OWCA/
     RegimentCreator.tscn        Regiment workflow
     character_creator.gd        Guardsman workflow UI/controller
     CharacterCreator.tscn       Guardsman workflow scene
+    printable_character_sheet.gd Original two-page field-dossier drawing
   tests/
     regiment_calculator_test.gd Headless smoke tests
     character_calculator_test.gd Guardsman package and persistence tests
+    character_sheet_export_test.gd Normal-renderer PDF/PNG visual test
 ```
 
 ## Run
@@ -61,6 +65,12 @@ godot --headless --path . --script res://OWCA/tests/character_calculator_test.gd
 godot --headless --path . --script res://OWCA/tests/character_ui_layout_test.gd
 ```
 
+The character-sheet visual test needs a real renderer because Godot's Windows headless display driver is a dummy. It runs minimized and writes the example output to the path in `OWCA_PDF_OUTPUT`:
+
+```text
+godot --rendering-method gl_compatibility --path . --script res://OWCA/tests/character_sheet_export_test.gd
+```
+
 The Regiment Creator resolves only regiment-wide decisions. Choices marked `per_character` are listed as deferred benefits, do not prevent a regiment from being valid, and are not answered or stored as resolutions in the regiment file. The file carries a snapshot of those choice definitions for the future Character Creator.
 
 Save files use a small versioned JSON envelope. Dossier export writes a readable plain-text summary that is suitable for printing from any editor. Rules are stored as short summaries with source/page pointers; consult the owned rulebook for complete wording.
@@ -71,9 +81,9 @@ The Guardsman Character Creator loads an `.owreg.json` regiment, accepts manuall
 
 The development v0.4 slice adds an ordered starting-XP ledger. It calculates Characteristic, Skill, and Talent costs from matching Aptitudes; enforces sequential Characteristic and Skill ranks; checks Talent prerequisites; prevents overspending; and recalculates later purchases when an earlier one is removed. Character saves preserve the ledger and remain backward-compatible with v0.3 files. All nine Characteristics and the Core Skill categories used by this project are available. Talents are deliberately limited to the five Guardsman Specialities' Core recommended advances plus the Weapon Training groups needed to test their prerequisite chains. This is not yet a complete Core Talent browser.
 
-The character workflow is responsive down to a 960×650 minimum window. Advancement actions remain inside their cards, horizontal stage scrolling is disabled, and the live-summary column automatically hides below 1100 pixels so the active form keeps usable space.
+The character workflow is responsive down to a 960x650 minimum window. Advancement actions remain inside their cards, horizontal stage scrolling is disabled, and the live-summary column automatically hides below 1100 pixels so the active form keeps usable space.
 
-Printable character-sheet PDF export is the next planned development slice.
+The Review stage can export an original two-page A4 field dossier as one printable PDF plus two 2480x3508 (300-DPI) PNG pages. Page 1 is the table-ready character record; page 2 contains rules, resolved choices, source references, advances, and campaign notes. The PDF is image-based, so its text is not selectable. Open it in a PDF viewer and print at 100% scale on A4 paper.
 
 ## Acceptance example
 

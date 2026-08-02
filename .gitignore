@@ -5,6 +5,12 @@
 # OWCA test runtime data
 OWCA/.test_user/
 tmp/
+output/pdf/
+
+# Local printable character-sheet exports
+*_character_sheet.pdf
+*_character_sheet_page_*.png
+*_character_sheet_page_*.png.import
 
 # Local builds and editor recovery files
 *.exe

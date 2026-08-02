@@ -24,6 +24,12 @@ func _run() -> void:
 		await process_frame
 		_assert_advancement_buttons_fit(creator, test_size)
 
+	creator.call("_select_stage", "review")
+	await process_frame
+	var export_button := _find_button(creator.get("stage_content") as Node, "EXPORT A4 PDF + PNG")
+	_assert_true(export_button != null, "Review stage exposes printable dossier export")
+	_assert_true(export_button.disabled, "export remains disabled for an incomplete character")
+
 	print("OWCA character UI layout tests passed.")
 	quit(0)
 
@@ -49,6 +55,16 @@ func _collect_buy_buttons(node: Node, output: Array[Button]) -> void:
 		if child is Button and str((child as Button).text).begins_with("BUY FOR"):
 			output.append(child as Button)
 		_collect_buy_buttons(child, output)
+
+
+func _find_button(node: Node, exact_text: String) -> Button:
+	for child in node.get_children():
+		if child is Button and (child as Button).text == exact_text:
+			return child as Button
+		var nested := _find_button(child, exact_text)
+		if nested != null:
+			return nested
+	return null
 
 
 func _assert_true(condition: bool, label: String) -> void:
