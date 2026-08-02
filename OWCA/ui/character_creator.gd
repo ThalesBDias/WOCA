@@ -33,6 +33,7 @@ var regiment_repository := RegimentDataRepository.new()
 var character_repository := CharacterDataRepository.new()
 var regiment_persistence := RegimentPersistence.new()
 var character_persistence := CharacterPersistence.new()
+var sheet_exporter := CharacterSheetExporter.new()
 var calculator := CharacterCalculator.new()
 var state := CharacterState.new()
 var calculation: Dictionary = {}
@@ -58,6 +59,7 @@ var responsive_note: Label
 var regiment_load_dialog: FileDialog
 var character_save_dialog: FileDialog
 var character_load_dialog: FileDialog
+var character_export_dialog: FileDialog
 
 
 func _ready() -> void:
@@ -175,7 +177,7 @@ func _build_workspace() -> Control:
 	navigation_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	navigation.add_child(navigation_spacer)
 	var scope_note := Label.new()
-	scope_note.text = "Testing scope:\n5 Core Guardsman Specialities\n600 XP advancement stage\nCurated Core Talent list\nNo dice rolling or PDF yet"
+	scope_note.text = "Testing scope:\n5 Core Guardsman Specialities\n600 XP advancement stage\nCurated Core Talent list\nA4 PDF + PNG dossier export\nNo digital dice rolling"
 	scope_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	scope_note.add_theme_font_size_override("font_size", 11)
 	scope_note.add_theme_color_override("font_color", COLOUR_MUTED)
@@ -298,6 +300,14 @@ func _build_dialogs() -> void:
 	character_load_dialog.filters = PackedStringArray(["*.owchar.json ; OWCA Character JSON", "*.json ; JSON files"])
 	character_load_dialog.file_selected.connect(_load_character_from_path)
 	add_child(character_load_dialog)
+
+	character_export_dialog = FileDialog.new()
+	character_export_dialog.title = "Export Printable OWCA Character Sheet"
+	character_export_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	character_export_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	character_export_dialog.filters = PackedStringArray(["*.pdf ; A4 PDF document"])
+	character_export_dialog.file_selected.connect(_export_character_sheet_to_path)
+	add_child(character_export_dialog)
 
 
 func _refresh(rebuild_stage: bool = true) -> void:
@@ -716,7 +726,12 @@ func _render_review_stage() -> void:
 	heading.add_theme_font_size_override("font_size", 22)
 	heading.add_theme_color_override("font_color", COLOUR_GOOD if calculation.get("valid", false) else COLOUR_BAD)
 	stage_content.add_child(heading)
-	stage_content.add_child(_wrapped_label("The live summary includes the ordered XP ledger. Character JSON save/load preserves all purchases; printable PDF export remains the next development slice.", COLOUR_MUTED))
+	stage_content.add_child(_wrapped_label("Save the editable character as JSON, or export a two-page A4 field dossier. The dossier includes a PDF for printing plus two high-resolution PNG pages.", COLOUR_MUTED))
+	var export_button := _make_action_button("EXPORT A4 PDF + PNG", _request_character_sheet_export)
+	export_button.custom_minimum_size.y = 48
+	export_button.disabled = not bool(calculation.get("valid", false))
+	export_button.tooltip_text = "Resolve every validation error and remaining choice before export." if export_button.disabled else "Creates one two-page A4 PDF and two 300-DPI PNG pages."
+	stage_content.add_child(export_button)
 	var save_button := _make_action_button("SAVE CHARACTER JSON", _request_character_save)
 	save_button.custom_minimum_size.y = 46
 	stage_content.add_child(save_button)
@@ -959,6 +974,11 @@ func _request_character_load() -> void:
 	character_load_dialog.popup_centered_ratio(0.72)
 
 
+func _request_character_sheet_export() -> void:
+	character_export_dialog.current_file = _safe_file_stem(state.character_name) + "_character_sheet.pdf"
+	character_export_dialog.popup_centered_ratio(0.72)
+
+
 func _load_regiment_from_path(path: String) -> void:
 	var loaded_regiment := RegimentState.new()
 	var result := regiment_persistence.load_regiment(path, loaded_regiment, regiment_repository)
@@ -984,6 +1004,15 @@ func _load_character_from_path(path: String) -> void:
 		active_stage = "review"
 		(stage_buttons[active_stage] as Button).button_pressed = true
 	_refresh()
+
+
+func _export_character_sheet_to_path(path: String) -> void:
+	var export_path := path if path.to_lower().ends_with(".pdf") else path + ".pdf"
+	action_message = "Rendering the two-page A4 field dossier..."
+	_render_status()
+	var result := await sheet_exporter.export_pdf_and_png(export_path, state, calculation, self)
+	action_message = str(result.get("message", "Character-sheet export failed."))
+	_render_status()
 
 
 func _return_home() -> void:

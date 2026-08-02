@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Added an ordered purchase ledger with per-purchase XP costs and removal controls.
 - Added headless tests for Aptitude pricing, sequential Skill and Characteristic costs, Talent prerequisites, affordability, invalidated dependencies, and XP save/load.
 - Added a headless responsive-layout regression test at 960, 1090, and 1280 pixel window widths.
+- Added an original two-page A4 Guardsman field-dossier design with riveted steel framing, parchment panels, oxblood section headers, and restrained hazard-strip accents.
+- Added Review-stage export of one printable PDF plus two 2480x3508 PNG pages containing Characteristics, Skills, Talents, equipment, trackers, rules, choices, sources, advances, and campaign notes.
+- Added a dependency-free Godot PDF writer and a normal-renderer visual export regression test.
 
 ### Changed
 
@@ -23,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Character JSON saves now use format/state version 2, record the advancement-data content version, and remain compatible with version 1 character files.
 - Character summaries and status panels now show XP spent, remaining, and total.
 - Advancement cards now use a vertically stacked action layout, and narrow windows automatically reclaim the live-summary column for the active creation stage.
+- The character workflow scope text and Review guidance now advertise printable dossier export while retaining physical or Discord dice rolling.
 
 ### Fixed
 
@@ -31,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Known limitations
 
 - The v0.4 Talent browser is a focused Guardsman testing catalog, not every Talent in the Core Rulebook.
-- Printable character-sheet PDF export is not implemented yet.
+- Character-sheet PDFs are image-based; their text is not selectable.
 - Only the five Core Guardsman Specialities are available for character testing.
 - OWCA intentionally does not roll dice.
 
