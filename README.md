@@ -2,6 +2,12 @@
 
 This module is a data-driven Godot 4 regiment and Guardsman creation assistant. Regiment creation includes every Core Rulebook option in the five supported categories: 8 Home Worlds, 9 Commanding Officers, 8 Regiment Types, 7 Training Doctrines, and 7 Equipment Doctrines. The current character-creation testing slice implements the five Core Guardsman Specialities: Heavy Gunner, Medic, Operator, Sergeant, and Weapon Specialist. Entries were checked against the supplied Only War Core Rulebook PDF; content files record printed book pages rather than PDF viewer indices.
 
+## Unofficial fan-project disclaimer
+
+OWCA is an unofficial, non-commercial fan-made tool. It is not affiliated with, sponsored by, or endorsed by Games Workshop, Fantasy Flight Games, or any other rights holder. *Warhammer 40,000*, *Only War*, and all related names, settings, characters, and game material remain the property of their respective owners.
+
+This repository does not include rulebook PDFs or reproduce long-form rules text. Users are expected to own the relevant source books. Its rules data is limited to numerical effects, concise summaries, and source/page references for personal tabletop use. The GNU GPL in this repository applies only to original OWCA code and other material the project authors have the right to license; it does not grant rights to third-party intellectual property.
+
 ## Project layout
 
 ```text
