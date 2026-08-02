@@ -12,6 +12,8 @@ const COLOUR_GOLD := Color("#d5b35b")
 const COLOUR_TEXT := Color("#e7eadf")
 const COLOUR_MUTED := Color("#a5ad9d")
 
+var music_button: Button
+
 
 func _ready() -> void:
 	_build_interface()
@@ -78,12 +80,33 @@ func _build_interface() -> void:
 	spacer_bottom.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	page.add_child(spacer_bottom)
 
+	var music_row := HBoxContainer.new()
+	music_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	music_row.add_theme_constant_override("separation", 12)
+	page.add_child(music_row)
+	var track_label := Label.new()
+	track_label.text = "NOW PLAYING: WAR GRINDER"
+	track_label.add_theme_font_size_override("font_size", 11)
+	track_label.add_theme_color_override("font_color", COLOUR_MUTED)
+	music_row.add_child(track_label)
+	music_button = Button.new()
+	music_button.custom_minimum_size = Vector2(130, 34)
+	music_button.pressed.connect(MusicManager.toggle_music)
+	music_row.add_child(music_button)
+	MusicManager.music_enabled_changed.connect(_on_music_enabled_changed)
+	_on_music_enabled_changed(MusicManager.is_music_enabled())
+
 	var footer := Label.new()
 	footer.text = "OWCA v0.3  |  Rules summaries with source and page references"
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 12)
 	footer.add_theme_color_override("font_color", COLOUR_MUTED)
 	page.add_child(footer)
+
+
+func _on_music_enabled_changed(enabled: bool) -> void:
+	if music_button != null:
+		music_button.text = "MUSIC: %s  [M]" % ("ON" if enabled else "OFF")
 
 
 func _build_workflow_card(title_text: String, status_text: String, description: String, button_text: String, callback: Callable) -> PanelContainer:
