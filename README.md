@@ -8,6 +8,8 @@ OWCA is an unofficial, non-commercial fan-made tool. It is not affiliated with, 
 
 This repository does not include rulebook PDFs or reproduce long-form rules text. Users are expected to own the relevant source books. Its rules data is limited to numerical effects, concise summaries, and source/page references for personal tabletop use. The GNU GPL in this repository applies only to original OWCA code and other material the project authors have the right to license; it does not grant rights to third-party intellectual property.
 
+See [CHANGELOG.md](CHANGELOG.md) for version history and patch notes.
+
 ## Project layout
 
 ```text
