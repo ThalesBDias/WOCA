@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/owca/regiment-options.schema.json",
+  "title": "OWCA regiment rules",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "content_version",
+    "budget",
+    "maximum_doctrines",
+    "selection_rules",
+    "sources",
+    "skills",
+    "talents",
+    "equipment",
+    "base_effects",
+    "options"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "content_version": { "type": "string", "minLength": 1 },
+    "budget": { "type": "integer", "minimum": 0 },
+    "maximum_doctrines": { "type": "integer", "minimum": 1 },
+    "selection_rules": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/selection_rule" }
+    },
+    "sources": { "type": "object", "additionalProperties": { "type": "object" } },
+    "rule_references": { "type": "object", "additionalProperties": { "$ref": "#/$defs/source_reference" } },
+    "skills": { "type": "object", "additionalProperties": { "$ref": "#/$defs/skill" } },
+    "talents": { "type": "object", "additionalProperties": { "$ref": "#/$defs/talent" } },
+    "equipment": { "type": "object", "additionalProperties": { "$ref": "#/$defs/catalog_entry" } },
+    "base_effects": { "$ref": "#/$defs/effects" },
+    "options": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/regiment_option" }
+    }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "selection_rule": {
+      "type": "object",
+      "required": ["label", "minimum", "maximum", "counts_as_doctrine"],
+      "properties": {
+        "label": { "type": "string" },
+        "minimum": { "type": "integer", "minimum": 0 },
+        "maximum": { "type": "integer", "minimum": 0 },
+        "counts_as_doctrine": { "type": "boolean" }
+      }
+    },
+    "catalog_entry": {
+      "type": "object",
+      "required": ["name"],
+      "properties": { "name": { "type": "string", "minLength": 1 } }
+    },
+    "skill": {
+      "allOf": [
+        { "$ref": "#/$defs/catalog_entry" },
+        { "type": "object", "properties": { "maximum_rank": { "type": "integer", "minimum": 1, "maximum": 4 } } }
+      ]
+    },
+    "talent": {
+      "allOf": [
+        { "$ref": "#/$defs/catalog_entry" },
+        { "type": "object", "properties": { "stackable": { "type": "boolean" } } }
+      ]
+    },
+    "source_reference": {
+      "type": "object",
+      "required": ["book", "page"],
+      "properties": {
+        "book": { "type": "string", "minLength": 1 },
+        "page": { "type": "integer", "minimum": 1 },
+        "page_end": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "equipment_grant": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "quantity": { "type": "integer", "minimum": 0 },
+        "scope": { "enum": ["per_character", "per_squad", "regiment"] },
+        "slot": { "type": "string" },
+        "replace_slot": { "type": "boolean" },
+        "merge": { "enum": ["add", "replace", "unique"] }
+      }
+    },
+    "special_rule": {
+      "type": "object",
+      "required": ["name", "summary"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string" }
+      }
+    },
+    "effects": {
+      "type": "object",
+      "properties": {
+        "characteristics": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "skills": { "type": "array", "items": { "type": "string" } },
+        "talents": { "type": "array", "items": { "type": "string" } },
+        "aptitudes": { "type": "array", "items": { "type": "string" } },
+        "special_rules": { "type": "array", "items": { "$ref": "#/$defs/special_rule" } },
+        "wounds": { "type": "integer" },
+        "equipment": { "type": "array", "items": { "$ref": "#/$defs/equipment_grant" } },
+        "equipment_adjustments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["quantity"],
+            "properties": {
+              "tag": { "type": "string", "minLength": 1 },
+              "target": { "enum": ["main_weapon_ammunition"] },
+              "quantity": { "type": "integer" }
+            }
+          }
+        },
+        "standard_kit_points_base": { "type": "integer", "minimum": 0 },
+        "source": { "$ref": "#/$defs/source_reference" }
+      },
+      "additionalProperties": true
+    },
+    "choice_option": {
+      "type": "object",
+      "required": ["id", "label", "effects"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "effects": { "$ref": "#/$defs/effects" }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "required": ["id", "prompt", "minimum", "maximum", "options"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "prompt": { "type": "string", "minLength": 1 },
+        "scope": { "enum": ["per_character", "regiment"] },
+        "minimum": { "type": "integer", "minimum": 0 },
+        "maximum": { "type": "integer", "minimum": 1 },
+        "unique_group": { "type": "string" },
+        "options": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/choice_option" } }
+      }
+    },
+    "regiment_option": {
+      "type": "object",
+      "required": ["id", "category", "name", "cost", "summary", "effects", "source"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "category": {
+          "enum": ["home_world", "commander", "regiment_type", "training_doctrine", "equipment_doctrine"]
+        },
+        "name": { "type": "string", "minLength": 1 },
+        "cost": { "type": "integer", "minimum": 0 },
+        "summary": { "type": "string" },
+        "effects": { "$ref": "#/$defs/effects" },
+        "choices": { "type": "array", "items": { "$ref": "#/$defs/choice" } },
+        "requirements": {
+          "type": "object",
+          "properties": {
+            "all": { "type": "array", "items": { "type": "string" } },
+            "any": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "excludes": { "type": "array", "items": { "type": "string" } },
+        "source": { "$ref": "#/$defs/source_reference" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

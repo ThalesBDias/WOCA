@@ -1,0 +1,167 @@
+{
+  "character_creation_choices": [
+    {
+      "id": "hive_characteristic_1",
+      "maximum": 1.0,
+      "minimum": 1.0,
+      "options": [
+        {
+          "effects": {
+            "characteristics": {
+              "Agility": 3.0
+            }
+          },
+          "id": "agility",
+          "label": "+3 Agility"
+        },
+        {
+          "effects": {
+            "characteristics": {
+              "Fellowship": 3.0
+            }
+          },
+          "id": "fellowship",
+          "label": "+3 Fellowship"
+        },
+        {
+          "effects": {
+            "characteristics": {
+              "Perception": 3.0
+            }
+          },
+          "id": "perception",
+          "label": "+3 Perception"
+        }
+      ],
+      "prompt": "Hive World characteristic bonus 1",
+      "scope": "per_character",
+      "unique_group": "hive_characteristics"
+    },
+    {
+      "id": "hive_characteristic_2",
+      "maximum": 1.0,
+      "minimum": 1.0,
+      "options": [
+        {
+          "effects": {
+            "characteristics": {
+              "Agility": 3.0
+            }
+          },
+          "id": "agility",
+          "label": "+3 Agility"
+        },
+        {
+          "effects": {
+            "characteristics": {
+              "Fellowship": 3.0
+            }
+          },
+          "id": "fellowship",
+          "label": "+3 Fellowship"
+        },
+        {
+          "effects": {
+            "characteristics": {
+              "Perception": 3.0
+            }
+          },
+          "id": "perception",
+          "label": "+3 Perception"
+        }
+      ],
+      "prompt": "Hive World characteristic bonus 2",
+      "scope": "per_character",
+      "unique_group": "hive_characteristics"
+    },
+    {
+      "id": "hive_urban_violence",
+      "maximum": 1.0,
+      "minimum": 1.0,
+      "options": [
+        {
+          "effects": {
+            "talents": [
+              "heightened_senses_hearing"
+            ]
+          },
+          "id": "heightened_senses_hearing",
+          "label": "Heightened Senses (Hearing)"
+        },
+        {
+          "effects": {
+            "talents": [
+              "paranoia"
+            ]
+          },
+          "id": "paranoia",
+          "label": "Paranoia"
+        },
+        {
+          "effects": {
+            "talents": [
+              "unremarkable"
+            ]
+          },
+          "id": "unremarkable",
+          "label": "Unremarkable"
+        }
+      ],
+      "prompt": "Urban Violence talent",
+      "scope": "per_character"
+    },
+    {
+      "id": "close_order_talent",
+      "maximum": 1.0,
+      "minimum": 1.0,
+      "options": [
+        {
+          "effects": {
+            "talents": [
+              "combat_formation"
+            ]
+          },
+          "id": "combat_formation",
+          "label": "Combat Formation"
+        },
+        {
+          "effects": {
+            "talents": [
+              "double_team"
+            ]
+          },
+          "id": "double_team",
+          "label": "Double Team"
+        }
+      ],
+      "prompt": "Close Order Drill talent",
+      "scope": "per_character"
+    }
+  ],
+  "format": "owca_regiment",
+  "regiment": {
+    "name": "13th Varanox Light Infantry",
+    "resolutions": {},
+    "selections": {
+      "commander": [
+        "choleric"
+      ],
+      "equipment_doctrine": [
+        "scavengers"
+      ],
+      "home_world": [
+        "hive_world"
+      ],
+      "regiment_type": [
+        "light_infantry"
+      ],
+      "training_doctrine": [
+        "close_order_drill"
+      ]
+    },
+    "version": 1
+  },
+  "rules_content_version": "0.2.0-core-complete",
+  "saved_at_utc": "2026-08-02T05:41:59",
+  "version": 1
+}
