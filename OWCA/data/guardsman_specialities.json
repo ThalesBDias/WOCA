@@ -1,0 +1,367 @@
+{
+  "schema_version": 1,
+  "content_version": "0.1.0-core-guardsmen",
+  "starting_xp": 600,
+  "sources": {
+    "ow_core": {
+      "title": "Only War Core Rulebook",
+      "short": "OW Core"
+    }
+  },
+  "skills": {
+    "athletics": { "name": "Athletics", "maximum_rank": 4 },
+    "command": { "name": "Command", "maximum_rank": 4 },
+    "common_lore_imperial_guard": { "name": "Common Lore (Imperial Guard)", "maximum_rank": 4 },
+    "common_lore_tech": { "name": "Common Lore (Tech)", "maximum_rank": 4 },
+    "common_lore_war": { "name": "Common Lore (War)", "maximum_rank": 4 },
+    "intimidate": { "name": "Intimidate", "maximum_rank": 4 },
+    "medicae": { "name": "Medicae", "maximum_rank": 4 },
+    "navigate_surface": { "name": "Navigate (Surface)", "maximum_rank": 4 },
+    "operate_surface": { "name": "Operate (Surface)", "maximum_rank": 4 },
+    "scholastic_lore_chymistry": { "name": "Scholastic Lore (Chymistry)", "maximum_rank": 4 },
+    "scholastic_lore_tactica_imperialis": { "name": "Scholastic Lore (Tactica Imperialis)", "maximum_rank": 4 },
+    "scrutiny": { "name": "Scrutiny", "maximum_rank": 4 },
+    "survival": { "name": "Survival", "maximum_rank": 4 },
+    "tech_use": { "name": "Tech-Use", "maximum_rank": 4 },
+    "trade_chymist": { "name": "Trade (Chymist)", "maximum_rank": 4 }
+  },
+  "talents": {
+    "air_of_authority": { "name": "Air of Authority", "stackable": false },
+    "cold_hearted": { "name": "Cold Hearted", "stackable": false },
+    "iron_discipline": { "name": "Iron Discipline", "stackable": false },
+    "iron_jaw": { "name": "Iron Jaw", "stackable": false },
+    "jaded": { "name": "Jaded", "stackable": false },
+    "lasgun_barrage": { "name": "Lasgun Barrage", "stackable": false },
+    "rapid_reload": { "name": "Rapid Reload", "stackable": false },
+    "technical_knock": { "name": "Technical Knock", "stackable": false },
+    "weapon_training_bolt": { "name": "Weapon Training (Bolt)", "stackable": false },
+    "weapon_training_chain": { "name": "Weapon Training (Chain)", "stackable": false },
+    "weapon_training_flame": { "name": "Weapon Training (Flame)", "stackable": false },
+    "weapon_training_heavy": { "name": "Weapon Training (Heavy)", "stackable": false },
+    "weapon_training_las": { "name": "Weapon Training (Las)", "stackable": false },
+    "weapon_training_launcher": { "name": "Weapon Training (Launcher)", "stackable": false },
+    "weapon_training_low_tech": { "name": "Weapon Training (Low-Tech)", "stackable": false },
+    "weapon_training_melta": { "name": "Weapon Training (Melta)", "stackable": false },
+    "weapon_training_plasma": { "name": "Weapon Training (Plasma)", "stackable": false },
+    "weapon_training_power": { "name": "Weapon Training (Power)", "stackable": false },
+    "weapon_training_shock": { "name": "Weapon Training (Shock)", "stackable": false },
+    "weapon_training_solid_projectile": { "name": "Weapon Training (Solid Projectile)", "stackable": false }
+  },
+  "equipment": {
+    "auspex_scanner": { "name": "Auspex/scanner" },
+    "chainsword_common": { "name": "Common Craftsmanship chainsword" },
+    "combi_tool": { "name": "Combi-tool" },
+    "data_slate": { "name": "Data-slate" },
+    "diagnostor": { "name": "Diagnostor" },
+    "flamer_common": { "name": "Common Craftsmanship flamer" },
+    "frag_grenade": { "name": "Frag grenade" },
+    "frag_missile": { "name": "Frag missile" },
+    "injector": { "name": "Injector" },
+    "krak_grenade": { "name": "Krak grenade" },
+    "lascutter": { "name": "Lascutter" },
+    "lasgun_good": { "name": "Good Craftsmanship lasgun" },
+    "laspistol_common": { "name": "Common Craftsmanship laspistol" },
+    "medikit": { "name": "Medikit" },
+    "mind_impulse_unit_common": { "name": "Common Craftsmanship mind impulse unit" },
+    "missile_launcher_common": { "name": "Common Craftsmanship missile launcher" },
+    "regimental_favoured_basic_weapon": { "name": "Regimental Favoured Basic Weapon" },
+    "regimental_favoured_heavy_weapon": { "name": "Regimental Favoured Heavy Weapon" },
+    "shotgun_common": { "name": "Common Craftsmanship shotgun" },
+    "heavy_stubber_common": { "name": "Common Craftsmanship heavy stubber" }
+  },
+  "specialities": [
+    {
+      "id": "heavy_gunner",
+      "name": "Heavy Gunner",
+      "summary": "Heavy-weapons specialist who provides direct, indirect, or anti-armour fire support.",
+      "group": "guardsman",
+      "starting_xp": 600,
+      "wounds_base": 10,
+      "comrade_mode": "standard",
+      "source": { "book": "ow_core", "page": 76, "page_end": 77 },
+      "effects": {
+        "characteristics": { "Toughness": 5 },
+        "skills": ["common_lore_imperial_guard", "common_lore_war", "intimidate"],
+        "talents": ["iron_jaw", "weapon_training_low_tech", "weapon_training_heavy"],
+        "aptitudes": ["Ballistic Skill", "Defence", "Fellowship", "Offence", "Perception", "Toughness"]
+      },
+      "choices": [
+        {
+          "id": "heavy_gunner_field_skill",
+          "prompt": "Heavy Gunner starting field skill",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "athletics", "label": "Athletics", "effects": { "skills": ["athletics"] } },
+            { "id": "survival", "label": "Survival", "effects": { "skills": ["survival"] } }
+          ]
+        },
+        {
+          "id": "heavy_gunner_primary_training",
+          "prompt": "Heavy Gunner primary Weapon Training",
+          "minimum": 1,
+          "maximum": 1,
+          "unique_group": "heavy_gunner_weapon_groups",
+          "options": [
+            { "id": "las", "label": "Las", "effects": { "talents": ["weapon_training_las"] } },
+            { "id": "solid_projectile", "label": "Solid Projectile", "effects": { "talents": ["weapon_training_solid_projectile"] } }
+          ]
+        },
+        {
+          "id": "heavy_gunner_additional_training",
+          "prompt": "Heavy Gunner additional Weapon Training",
+          "minimum": 1,
+          "maximum": 1,
+          "unique_group": "heavy_gunner_weapon_groups",
+          "options": [
+            { "id": "bolt", "label": "Bolt", "effects": { "talents": ["weapon_training_bolt"] } },
+            { "id": "chain", "label": "Chain", "effects": { "talents": ["weapon_training_chain"] } },
+            { "id": "flame", "label": "Flame", "effects": { "talents": ["weapon_training_flame"] } },
+            { "id": "las", "label": "Las", "effects": { "talents": ["weapon_training_las"] } },
+            { "id": "launcher", "label": "Launcher", "effects": { "talents": ["weapon_training_launcher"] } },
+            { "id": "melta", "label": "Melta", "effects": { "talents": ["weapon_training_melta"] } },
+            { "id": "plasma", "label": "Plasma", "effects": { "talents": ["weapon_training_plasma"] } },
+            { "id": "power", "label": "Power", "effects": { "talents": ["weapon_training_power"] } },
+            { "id": "shock", "label": "Shock", "effects": { "talents": ["weapon_training_shock"] } },
+            { "id": "solid_projectile", "label": "Solid Projectile", "effects": { "talents": ["weapon_training_solid_projectile"] } }
+          ]
+        },
+        {
+          "id": "heavy_gunner_specialist_weapon",
+          "prompt": "Heavy Gunner specialist weapon",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "missile_launcher", "label": "Missile launcher with 5 frag missiles", "effects": { "equipment": [{ "id": "missile_launcher_common", "quantity": 1, "scope": "per_character" }, { "id": "frag_missile", "quantity": 5, "scope": "per_character" }] } },
+            { "id": "heavy_stubber", "label": "Heavy stubber", "effects": { "equipment": [{ "id": "heavy_stubber_common", "quantity": 1, "scope": "per_character" }] } },
+            { "id": "favoured_heavy", "label": "Regimental Favoured Heavy Weapon", "effects": { "equipment": [{ "id": "regimental_favoured_heavy_weapon", "quantity": 1, "scope": "per_character" }] } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "medic",
+      "name": "Medic",
+      "summary": "Field medic trained to diagnose injuries and keep squad-mates alive under fire.",
+      "group": "guardsman",
+      "starting_xp": 600,
+      "wounds_base": 8,
+      "comrade_mode": "standard",
+      "source": { "book": "ow_core", "page": 78, "page_end": 79 },
+      "effects": {
+        "characteristics": { "Intelligence": 5 },
+        "skills": ["medicae", "scholastic_lore_chymistry"],
+        "talents": ["weapon_training_low_tech"],
+        "aptitudes": ["Ballistic Skill", "Fieldcraft", "Intelligence", "Knowledge", "Perception", "Willpower"],
+        "equipment": [{ "id": "diagnostor", "quantity": 1, "scope": "per_character" }, { "id": "injector", "quantity": 1, "scope": "per_character" }, { "id": "medikit", "quantity": 1, "scope": "per_character" }]
+      },
+      "choices": [
+        {
+          "id": "medic_support_skill",
+          "prompt": "Medic starting support skill",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "scrutiny", "label": "Scrutiny", "effects": { "skills": ["scrutiny"] } },
+            { "id": "trade_chymist", "label": "Trade (Chymist)", "effects": { "skills": ["trade_chymist"] } }
+          ]
+        },
+        {
+          "id": "medic_resolve_talent",
+          "prompt": "Medic starting Talent",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "cold_hearted", "label": "Cold Hearted", "effects": { "talents": ["cold_hearted"] } },
+            { "id": "jaded", "label": "Jaded", "effects": { "talents": ["jaded"] } }
+          ]
+        },
+        {
+          "id": "medic_weapon_training",
+          "prompt": "Medic Weapon Training",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "las", "label": "Las", "effects": { "talents": ["weapon_training_las"] } },
+            { "id": "solid_projectile", "label": "Solid Projectile", "effects": { "talents": ["weapon_training_solid_projectile"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "operator",
+      "name": "Operator",
+      "summary": "Vehicle and technology specialist trusted with the regiment's machines.",
+      "group": "guardsman",
+      "starting_xp": 600,
+      "wounds_base": 6,
+      "comrade_mode": "standard",
+      "source": { "book": "ow_core", "page": 80, "page_end": 81 },
+      "effects": {
+        "characteristics": { "Agility": 5 },
+        "skills": ["operate_surface", "tech_use"],
+        "talents": ["technical_knock", "weapon_training_low_tech"],
+        "aptitudes": ["Agility", "Ballistic Skill", "Fellowship", "Fieldcraft", "Intelligence", "Tech"],
+        "equipment": [{ "id": "auspex_scanner", "quantity": 1, "scope": "per_character" }, { "id": "mind_impulse_unit_common", "quantity": 1, "scope": "per_character" }, { "id": "combi_tool", "quantity": 1, "scope": "per_character" }, { "id": "data_slate", "quantity": 1, "scope": "per_character" }, { "id": "lascutter", "quantity": 1, "scope": "per_character" }]
+      },
+      "choices": [
+        {
+          "id": "operator_knowledge_skill",
+          "prompt": "Operator starting knowledge skill",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "common_lore_tech", "label": "Common Lore (Tech)", "effects": { "skills": ["common_lore_tech"] } },
+            { "id": "navigate_surface", "label": "Navigate (Surface)", "effects": { "skills": ["navigate_surface"] } }
+          ]
+        },
+        {
+          "id": "operator_weapon_training",
+          "prompt": "Operator Weapon Training",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "las", "label": "Las", "effects": { "talents": ["weapon_training_las"] } },
+            { "id": "solid_projectile", "label": "Solid Projectile", "effects": { "talents": ["weapon_training_solid_projectile"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sergeant",
+      "name": "Sergeant",
+      "summary": "Squad leader who commands, motivates, and coordinates fellow Guardsmen.",
+      "group": "guardsman",
+      "starting_xp": 600,
+      "wounds_base": 10,
+      "comrade_mode": "standard",
+      "source": { "book": "ow_core", "page": 82, "page_end": 83 },
+      "effects": {
+        "characteristics": { "Fellowship": 5 },
+        "skills": ["command"],
+        "talents": ["weapon_training_chain", "weapon_training_low_tech"],
+        "aptitudes": ["Defence", "Fellowship", "Leadership", "Perception", "Strength", "Toughness", "Weapon Skill"],
+        "equipment": [{ "id": "laspistol_common", "quantity": 1, "scope": "per_character" }, { "id": "chainsword_common", "quantity": 1, "scope": "per_character" }]
+      },
+      "choices": [
+        {
+          "id": "sergeant_command_skill",
+          "prompt": "Sergeant starting command skill",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "navigate_surface", "label": "Navigate (Surface)", "effects": { "skills": ["navigate_surface"] } },
+            { "id": "scholastic_lore_tactica_imperialis", "label": "Scholastic Lore (Tactica Imperialis)", "effects": { "skills": ["scholastic_lore_tactica_imperialis"] } }
+          ]
+        },
+        {
+          "id": "sergeant_leadership_talent",
+          "prompt": "Sergeant starting leadership Talent",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "air_of_authority", "label": "Air of Authority", "effects": { "talents": ["air_of_authority"] } },
+            { "id": "iron_discipline", "label": "Iron Discipline", "effects": { "talents": ["iron_discipline"] } }
+          ]
+        },
+        {
+          "id": "sergeant_weapon_training",
+          "prompt": "Sergeant ranged Weapon Training",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "las", "label": "Las", "effects": { "talents": ["weapon_training_las"] } },
+            { "id": "solid_projectile", "label": "Solid Projectile", "effects": { "talents": ["weapon_training_solid_projectile"] } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "weapon_specialist",
+      "name": "Weapon Specialist",
+      "summary": "Versatile frontline Guardsman focused on accurate and reliable weapon use.",
+      "group": "guardsman",
+      "starting_xp": 600,
+      "wounds_base": 8,
+      "comrade_mode": "standard",
+      "source": { "book": "ow_core", "page": 84, "page_end": 85 },
+      "effects": {
+        "skills": ["navigate_surface", "common_lore_imperial_guard", "common_lore_war"],
+        "aptitudes": ["Agility", "Ballistic Skill", "Fellowship", "Fieldcraft", "Finesse", "Weapon Skill"]
+      },
+      "choices": [
+        {
+          "id": "weapon_specialist_characteristic",
+          "prompt": "Weapon Specialist characteristic bonus",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "ballistic_skill", "label": "+5 Ballistic Skill", "effects": { "characteristics": { "Ballistic Skill": 5 } } },
+            { "id": "weapon_skill", "label": "+5 Weapon Skill", "effects": { "characteristics": { "Weapon Skill": 5 } } }
+          ]
+        },
+        {
+          "id": "weapon_specialist_field_skill",
+          "prompt": "Weapon Specialist starting field skill",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "athletics", "label": "Athletics", "effects": { "skills": ["athletics"] } },
+            { "id": "survival", "label": "Survival", "effects": { "skills": ["survival"] } }
+          ]
+        },
+        {
+          "id": "weapon_specialist_talent",
+          "prompt": "Weapon Specialist starting Talent",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "lasgun_barrage", "label": "Lasgun Barrage", "effects": { "talents": ["lasgun_barrage"] } },
+            { "id": "rapid_reload", "label": "Rapid Reload", "effects": { "talents": ["rapid_reload"] } }
+          ]
+        },
+        {
+          "id": "weapon_specialist_trainings",
+          "prompt": "Choose three Weapon Training groups",
+          "minimum": 3,
+          "maximum": 3,
+          "options": [
+            { "id": "bolt", "label": "Bolt", "effects": { "talents": ["weapon_training_bolt"] } },
+            { "id": "chain", "label": "Chain", "effects": { "talents": ["weapon_training_chain"] } },
+            { "id": "flame", "label": "Flame", "effects": { "talents": ["weapon_training_flame"] } },
+            { "id": "las", "label": "Las", "effects": { "talents": ["weapon_training_las"] } },
+            { "id": "launcher", "label": "Launcher", "effects": { "talents": ["weapon_training_launcher"] } },
+            { "id": "low_tech", "label": "Low-Tech", "effects": { "talents": ["weapon_training_low_tech"] } },
+            { "id": "melta", "label": "Melta", "effects": { "talents": ["weapon_training_melta"] } },
+            { "id": "plasma", "label": "Plasma", "effects": { "talents": ["weapon_training_plasma"] } },
+            { "id": "power", "label": "Power", "effects": { "talents": ["weapon_training_power"] } },
+            { "id": "shock", "label": "Shock", "effects": { "talents": ["weapon_training_shock"] } },
+            { "id": "solid_projectile", "label": "Solid Projectile", "effects": { "talents": ["weapon_training_solid_projectile"] } }
+          ]
+        },
+        {
+          "id": "weapon_specialist_grenades",
+          "prompt": "Weapon Specialist grenade kit",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "frag", "label": "4 frag grenades", "effects": { "equipment": [{ "id": "frag_grenade", "quantity": 4, "scope": "per_character" }] } },
+            { "id": "krak", "label": "4 krak grenades", "effects": { "equipment": [{ "id": "krak_grenade", "quantity": 4, "scope": "per_character" }] } }
+          ]
+        },
+        {
+          "id": "weapon_specialist_weapon",
+          "prompt": "Weapon Specialist specialist weapon",
+          "minimum": 1,
+          "maximum": 1,
+          "options": [
+            { "id": "lasgun", "label": "Good Craftsmanship lasgun", "effects": { "equipment": [{ "id": "lasgun_good", "quantity": 1, "scope": "per_character" }] } },
+            { "id": "flamer", "label": "Common Craftsmanship flamer", "effects": { "equipment": [{ "id": "flamer_common", "quantity": 1, "scope": "per_character" }] } },
+            { "id": "shotgun", "label": "Common Craftsmanship shotgun", "effects": { "equipment": [{ "id": "shotgun_common", "quantity": 1, "scope": "per_character" }] } },
+            { "id": "favoured_basic", "label": "Regimental Favoured Basic Weapon", "effects": { "equipment": [{ "id": "regimental_favoured_basic_weapon", "quantity": 1, "scope": "per_character" }] } }
+          ]
+        }
+      ]
+    }
+  ]
+}

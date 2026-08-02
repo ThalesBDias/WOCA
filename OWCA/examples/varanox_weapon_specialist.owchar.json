@@ -1,0 +1,103 @@
+{
+  "calculated_preview": {
+    "characteristics": {
+      "Agility": 36,
+      "Ballistic Skill": 35,
+      "Fellowship": 30,
+      "Intelligence": 30,
+      "Perception": 33,
+      "Strength": 30,
+      "Toughness": 27,
+      "Weapon Skill": 30,
+      "Willpower": 30
+    },
+    "fate_points": 1,
+    "speciality": "Weapon Specialist",
+    "valid": true,
+    "wounds": 9,
+    "xp_remaining": 600
+  },
+  "character": {
+    "base_characteristics": {
+      "Agility": 30,
+      "Ballistic Skill": 30,
+      "Fellowship": 30,
+      "Intelligence": 30,
+      "Perception": 30,
+      "Strength": 30,
+      "Toughness": 30,
+      "Weapon Skill": 30,
+      "Willpower": 30
+    },
+    "fate_roll": 5,
+    "manual_adjustments": {},
+    "name": "New Character",
+    "player_name": "",
+    "regiment": {
+      "name": "13th Varanox Light Infantry",
+      "resolutions": {},
+      "selections": {
+        "commander": [
+          "choleric"
+        ],
+        "equipment_doctrine": [
+          "scavengers"
+        ],
+        "home_world": [
+          "hive_world"
+        ],
+        "regiment_type": [
+          "light_infantry"
+        ],
+        "training_doctrine": [
+          "close_order_drill"
+        ]
+      },
+      "version": 1
+    },
+    "regiment_resolutions": {
+      "close_order_talent": [
+        "double_team"
+      ],
+      "hive_characteristic_1": [
+        "agility"
+      ],
+      "hive_characteristic_2": [
+        "perception"
+      ],
+      "hive_urban_violence": [
+        "heightened_senses_hearing"
+      ]
+    },
+    "regiment_rules_content_version": "0.2.0-core-complete",
+    "speciality_id": "weapon_specialist",
+    "speciality_resolutions": {
+      "weapon_specialist_characteristic": [
+        "ballistic_skill"
+      ],
+      "weapon_specialist_field_skill": [
+        "survival"
+      ],
+      "weapon_specialist_grenades": [
+        "frag"
+      ],
+      "weapon_specialist_talent": [
+        "rapid_reload"
+      ],
+      "weapon_specialist_trainings": [
+        "las",
+        "low_tech",
+        "launcher"
+      ],
+      "weapon_specialist_weapon": [
+        "lasgun"
+      ]
+    },
+    "version": 1,
+    "wounds_roll": 2
+  },
+  "character_rules_content_version": "0.1.0-core-guardsmen",
+  "format": "owca_character",
+  "saved_at_utc": "2026-08-02T05:53:53",
+  "version": 1
+}

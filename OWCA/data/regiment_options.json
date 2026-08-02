@@ -1,0 +1,637 @@
+{
+  "schema_version": 1,
+  "content_version": "0.2.0-core-complete",
+  "budget": 12,
+  "maximum_doctrines": 3,
+  "selection_rules": {
+	"home_world": { "label": "Home World", "minimum": 1, "maximum": 1, "counts_as_doctrine": false },
+	"commander": { "label": "Commanding Officer", "minimum": 1, "maximum": 1, "counts_as_doctrine": false },
+	"regiment_type": { "label": "Regiment Type", "minimum": 1, "maximum": 1, "counts_as_doctrine": true },
+	"training_doctrine": { "label": "Training Doctrines", "minimum": 0, "maximum": 2, "counts_as_doctrine": true },
+	"equipment_doctrine": { "label": "Equipment Doctrines", "minimum": 0, "maximum": 2, "counts_as_doctrine": true }
+  },
+  "sources": {
+	"ow_core": { "title": "Only War Core Rulebook", "short": "OW Core" }
+  },
+  "rule_references": {
+	"duplicate_grants": { "book": "ow_core", "page": 41 },
+	"skill_ranks": { "book": "ow_core", "page": 114 },
+	"regiment_budget": { "book": "ow_core", "page": 58 },
+	"doctrine_limit": { "book": "ow_core", "page": 64 },
+	"standard_kit": { "book": "ow_core", "page": 68 }
+  },
+  "skills": {
+	"athletics": { "name": "Athletics", "maximum_rank": 4 },
+	"awareness": { "name": "Awareness", "maximum_rank": 4 },
+	"command": { "name": "Command", "maximum_rank": 4 },
+	"common_lore_administratum": { "name": "Common Lore (Administratum)", "maximum_rank": 4 },
+	"common_lore_ecclesiarchy": { "name": "Common Lore (Ecclesiarchy)", "maximum_rank": 4 },
+	"common_lore_imperial_creed": { "name": "Common Lore (Imperial Creed)", "maximum_rank": 4 },
+	"common_lore_imperial_guard": { "name": "Common Lore (Imperial Guard)", "maximum_rank": 4 },
+	"common_lore_imperium": { "name": "Common Lore (Imperium)", "maximum_rank": 4 },
+	"common_lore_war": { "name": "Common Lore (War)", "maximum_rank": 4 },
+	"deceive": { "name": "Deceive", "maximum_rank": 4 },
+	"forbidden_lore_daemonology": { "name": "Forbidden Lore (Daemonology)", "maximum_rank": 4 },
+	"forbidden_lore_heresy": { "name": "Forbidden Lore (Heresy)", "maximum_rank": 4 },
+	"forbidden_lore_mutants": { "name": "Forbidden Lore (Mutants)", "maximum_rank": 4 },
+	"forbidden_lore_other_enemy": { "name": "Forbidden Lore (GM-approved enemy)", "maximum_rank": 4 },
+	"forbidden_lore_xenos": { "name": "Forbidden Lore (Xenos)", "maximum_rank": 4 },
+	"inquiry": { "name": "Inquiry", "maximum_rank": 4 },
+	"intimidate": { "name": "Intimidate", "maximum_rank": 4 },
+	"linguistics_high_gothic": { "name": "Linguistics (High Gothic)", "maximum_rank": 4 },
+	"linguistics_low_gothic": { "name": "Linguistics (Low Gothic)", "maximum_rank": 4 },
+	"navigate_surface": { "name": "Navigate (Surface)", "maximum_rank": 4 },
+	"operate_aeronautica": { "name": "Operate (Aeronautica)", "maximum_rank": 4 },
+	"operate_surface": { "name": "Operate (Surface)", "maximum_rank": 4 },
+	"parry": { "name": "Parry", "maximum_rank": 4 },
+	"survival": { "name": "Survival", "maximum_rank": 4 },
+	"tech_use": { "name": "Tech-Use", "maximum_rank": 4 }
+  },
+  "talents": {
+	"air_of_authority": { "name": "Air of Authority", "stackable": false },
+	"catfall": { "name": "Catfall", "stackable": false },
+	"combat_formation": { "name": "Combat Formation", "stackable": false },
+	"combat_sense": { "name": "Combat Sense", "stackable": false },
+	"deadeye_shot": { "name": "Deadeye Shot", "stackable": false },
+	"die_hard": { "name": "Die Hard", "stackable": false },
+	"double_team": { "name": "Double Team", "stackable": false },
+	"foresight": { "name": "Foresight", "stackable": false },
+	"hatred_chaos": { "name": "Hatred (Chaos forces)", "stackable": false },
+	"hatred_daemons": { "name": "Hatred (Daemons)", "stackable": false },
+	"hatred_dark_eldar": { "name": "Hatred (Dark Eldar)", "stackable": false },
+	"hatred_eldar": { "name": "Hatred (Eldar)", "stackable": false },
+	"hatred_mutants": { "name": "Hatred (Mutants)", "stackable": false },
+	"hatred_orks": { "name": "Hatred (Orks)", "stackable": false },
+	"hatred_other_enemy": { "name": "Hatred (GM-approved enemy)", "stackable": false },
+	"hatred_tau": { "name": "Hatred (Tau)", "stackable": false },
+	"hatred_tyranids": { "name": "Hatred (Tyranids)", "stackable": false },
+	"heightened_senses_hearing": { "name": "Heightened Senses (Hearing)", "stackable": false },
+	"light_sleeper": { "name": "Light Sleeper", "stackable": false },
+	"lightning_reflexes": { "name": "Lightning Reflexes", "stackable": false },
+	"nerves_of_steel": { "name": "Nerves of Steel", "stackable": false },
+	"orthoproxy": { "name": "Orthoproxy", "stackable": false },
+	"paranoia": { "name": "Paranoia", "stackable": false },
+	"peer_nobility": { "name": "Peer (Nobility)", "stackable": false },
+	"peer_underworld": { "name": "Peer (Underworld)", "stackable": false },
+	"rapid_reaction": { "name": "Rapid Reaction", "stackable": false },
+	"rapid_reload": { "name": "Rapid Reload", "stackable": false },
+	"resistance_fear": { "name": "Resistance (Fear)", "stackable": false },
+	"resistance_poisons": { "name": "Resistance (Poisons)", "stackable": false },
+	"sprint": { "name": "Sprint", "stackable": false },
+	"street_fighting": { "name": "Street Fighting", "stackable": false },
+	"technical_knock": { "name": "Technical Knock", "stackable": false },
+	"unremarkable": { "name": "Unremarkable", "stackable": false },
+	"unshakeable_faith": { "name": "Unshakeable Faith", "stackable": false }
+  },
+  "equipment": {
+	"uniform": { "name": "Uniform" },
+	"poor_weather_gear": { "name": "Poor weather gear" },
+	"laspistol": { "name": "Laspistol", "ammunition_id": "charge_pack" },
+	"lascarbine": { "name": "Lascarbine", "ammunition_id": "charge_pack" },
+	"m36_lasgun": { "name": "M36 lasgun", "ammunition_id": "charge_pack" },
+	"charge_pack": { "name": "Charge pack" },
+	"knife": { "name": "Knife" },
+	"common_low_tech_weapon": { "name": "Chosen Common Low-Tech weapon" },
+	"mono_melee_upgrade": { "name": "Mono upgrade for standard melee weapon" },
+	"flak_vest": { "name": "Flak vest" },
+	"flak_helmet": { "name": "Flak helmet" },
+	"guard_flak_armour": { "name": "Imperial Guard flak armour" },
+	"rucksack": { "name": "Rucksack or sling bag" },
+	"basic_tools": { "name": "Basic tools" },
+	"mess_kit": { "name": "Mess kit and water canteen" },
+	"blanket": { "name": "Blanket and sleep bag" },
+	"lamp_pack": { "name": "Rechargeable lamp pack" },
+	"grooming_kit": { "name": "Grooming kit" },
+	"cognomen_tags": { "name": "Cognomen tags or equivalent ID" },
+	"primer": { "name": "Primer or instructional handbook" },
+	"rations": { "name": "Combat sustenance rations (weeks)" },
+	"frag_grenade": { "name": "Frag grenade", "tags": ["grenade"] },
+	"krak_grenade": { "name": "Krak grenade", "tags": ["grenade"] },
+	"smoke_grenade": { "name": "Smoke grenade", "tags": ["grenade"] },
+	"photon_flash_grenade": { "name": "Photon flash grenade", "tags": ["grenade"] },
+	"respirator": { "name": "Respirator" },
+	"grav_chute": { "name": "Grav-chute" },
+	"magnoculars": { "name": "Magnoculars" },
+	"maintenance_toolkit": { "name": "Anointed maintenance toolkit" },
+	"empty_sandbag": { "name": "Empty sandbag" },
+	"entrenching_tool": { "name": "Entrenching tool" },
+	"leman_russ": { "name": "Leman Russ battle tank or approved variant" },
+	"sentinel_scout": { "name": "Sentinel Scout Walker" },
+	"chimera": { "name": "Chimera Armoured Transport" },
+	"hellhound": { "name": "Hellhound Support Tank or approved variant" },
+	"chameleoline_cloak": { "name": "Chameleoline cloak" },
+	"chameleoline_armour": { "name": "Chameleoline-coated armour" },
+	"injector": { "name": "Injector" },
+	"inhaler": { "name": "Inhaler" },
+	"frenzon_dose": { "name": "Dose of frenzon" },
+	"stimm_dose": { "name": "Dose of stimm" }
+  },
+  "base_effects": {
+	"equipment": [
+	  { "id": "uniform", "quantity": 1, "scope": "per_character" },
+	  { "id": "poor_weather_gear", "quantity": 1, "scope": "per_character" },
+	  { "id": "laspistol", "quantity": 1, "scope": "per_character", "slot": "main_weapon" },
+	  { "id": "charge_pack", "quantity": 2, "scope": "per_character" },
+	  { "id": "knife", "quantity": 1, "scope": "per_character", "slot": "melee_weapon" },
+	  { "id": "flak_vest", "quantity": 1, "scope": "per_character", "slot": "armour" },
+	  { "id": "rucksack", "quantity": 1, "scope": "per_character" },
+	  { "id": "basic_tools", "quantity": 1, "scope": "per_character" },
+	  { "id": "mess_kit", "quantity": 1, "scope": "per_character" },
+	  { "id": "blanket", "quantity": 1, "scope": "per_character" },
+	  { "id": "lamp_pack", "quantity": 1, "scope": "per_character" },
+	  { "id": "grooming_kit", "quantity": 1, "scope": "per_character" },
+	  { "id": "cognomen_tags", "quantity": 1, "scope": "per_character" },
+	  { "id": "primer", "quantity": 1, "scope": "per_character" },
+	  { "id": "rations", "quantity": 2, "scope": "per_character" }
+	],
+	"source": { "book": "ow_core", "page": 68 }
+  },
+  "options": [
+	{
+	  "id": "death_world", "category": "home_world", "name": "Death World", "cost": 3,
+	  "summary": "Hardy survivors raised amid constant natural danger.",
+	  "effects": {
+		"skills": ["survival"], "wounds": 2,
+		"special_rules": [
+		  { "name": "Fluency", "summary": "Can speak Low Gothic but does not begin literate in it." },
+		  { "name": "Wary of Outsiders", "summary": "-10 to Interaction tests in formal surroundings; non-death-worlders also suffer -10 to Interaction tests against them, subject to GM waiver." }
+		]
+	  },
+	  "choices": [
+		{ "id": "death_characteristic_1", "prompt": "Death World characteristic bonus 1", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "death_characteristics", "options": [
+		  { "id": "perception", "label": "+3 Perception", "effects": { "characteristics": { "Perception": 3 } } },
+		  { "id": "strength", "label": "+3 Strength", "effects": { "characteristics": { "Strength": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } }
+		] },
+		{ "id": "death_characteristic_2", "prompt": "Death World characteristic bonus 2", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "death_characteristics", "options": [
+		  { "id": "perception", "label": "+3 Perception", "effects": { "characteristics": { "Perception": 3 } } },
+		  { "id": "strength", "label": "+3 Strength", "effects": { "characteristics": { "Strength": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } }
+		] },
+		{ "id": "death_hardened_talent", "prompt": "Hardened talent", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "light_sleeper", "label": "Light Sleeper", "effects": { "talents": ["light_sleeper"] } },
+		  { "id": "lightning_reflexes", "label": "Lightning Reflexes", "effects": { "talents": ["lightning_reflexes"] } },
+		  { "id": "resistance_poisons", "label": "Resistance (Poisons)", "effects": { "talents": ["resistance_poisons"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 59 }
+	},
+	{
+	  "id": "fortress_world", "category": "home_world", "name": "Fortress World", "cost": 3,
+	  "summary": "Disciplined soldiers raised for perpetual war and defence.",
+	  "effects": {
+		"skills": ["common_lore_war", "common_lore_imperium", "common_lore_imperial_guard", "linguistics_low_gothic"],
+		"special_rules": [
+		  { "name": "Hated Enemy", "summary": "The GM may require an Ordinary (+10) Willpower test to restrain attacks against the chosen enemy." },
+		  { "name": "Bred for War", "summary": "Must pass a Challenging (+0) Willpower test to go against Imperial Guard rules and regulations." }
+		]
+	  },
+	  "choices": [
+		{ "id": "fortress_characteristic_1", "prompt": "Fortress World characteristic bonus 1", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "fortress_characteristics", "options": [
+		  { "id": "ballistic_skill", "label": "+3 Ballistic Skill", "effects": { "characteristics": { "Ballistic Skill": 3 } } },
+		  { "id": "willpower", "label": "+3 Willpower", "effects": { "characteristics": { "Willpower": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } }
+		] },
+		{ "id": "fortress_characteristic_2", "prompt": "Fortress World characteristic bonus 2", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "fortress_characteristics", "options": [
+		  { "id": "ballistic_skill", "label": "+3 Ballistic Skill", "effects": { "characteristics": { "Ballistic Skill": 3 } } },
+		  { "id": "willpower", "label": "+3 Willpower", "effects": { "characteristics": { "Willpower": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } }
+		] },
+		{ "id": "fortress_hated_enemy", "prompt": "Fortress World hated enemy", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "orks", "label": "Orks", "effects": { "talents": ["hatred_orks"] } },
+		  { "id": "chaos", "label": "Chaos forces", "effects": { "talents": ["hatred_chaos"] } },
+		  { "id": "daemons", "label": "Daemons", "effects": { "talents": ["hatred_daemons"] } },
+		  { "id": "eldar", "label": "Eldar", "effects": { "talents": ["hatred_eldar"] } },
+		  { "id": "dark_eldar", "label": "Dark Eldar", "effects": { "talents": ["hatred_dark_eldar"] } },
+		  { "id": "tau", "label": "Tau", "effects": { "talents": ["hatred_tau"] } },
+		  { "id": "tyranids", "label": "Tyranids", "effects": { "talents": ["hatred_tyranids"] } },
+		  { "id": "other_enemy", "label": "Other GM-approved enemy", "effects": { "talents": ["hatred_other_enemy"] } }
+		] },
+		{ "id": "fortress_combat_doctrine", "prompt": "Fortress World Combat Doctrine talent", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "nerves_of_steel", "label": "Nerves of Steel", "effects": { "talents": ["nerves_of_steel"] } },
+		  { "id": "sprint", "label": "Sprint", "effects": { "talents": ["sprint"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 59, "page_end": 60 }
+	},
+	{
+	  "id": "highborn", "category": "home_world", "name": "Highborn", "cost": 3,
+	  "summary": "Privileged recruits trained for authority and command.",
+	  "effects": {
+		"skills": ["common_lore_administratum", "inquiry", "linguistics_high_gothic"], "wounds": -1,
+		"special_rules": [
+		  { "name": "Fluency", "summary": "Can speak Low Gothic but does not begin literate in it." },
+		  { "name": "Duty and Honour", "summary": "-10 to Charm, Inquiry, and Deceive against non-highborn; +10 to those tests with nobility and high authority in formal situations." },
+		  { "name": "Abundant Resources", "summary": "The squad begins with +10 Logistics Rating." }
+		]
+	  },
+	  "choices": [
+		{ "id": "highborn_characteristic_1", "prompt": "Highborn characteristic bonus 1", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "highborn_characteristics", "options": [
+		  { "id": "fellowship", "label": "+3 Fellowship", "effects": { "characteristics": { "Fellowship": 3 } } },
+		  { "id": "intelligence", "label": "+3 Intelligence", "effects": { "characteristics": { "Intelligence": 3 } } },
+		  { "id": "weapon_skill", "label": "+3 Weapon Skill", "effects": { "characteristics": { "Weapon Skill": 3 } } }
+		] },
+		{ "id": "highborn_characteristic_2", "prompt": "Highborn characteristic bonus 2", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "highborn_characteristics", "options": [
+		  { "id": "fellowship", "label": "+3 Fellowship", "effects": { "characteristics": { "Fellowship": 3 } } },
+		  { "id": "intelligence", "label": "+3 Intelligence", "effects": { "characteristics": { "Intelligence": 3 } } },
+		  { "id": "weapon_skill", "label": "+3 Weapon Skill", "effects": { "characteristics": { "Weapon Skill": 3 } } }
+		] },
+		{ "id": "highborn_tutor_talent", "prompt": "The Finest Tutors talent", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "air_of_authority", "label": "Air of Authority", "effects": { "talents": ["air_of_authority"] } },
+		  { "id": "peer_nobility", "label": "Peer (Nobility)", "effects": { "talents": ["peer_nobility"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 60 }
+	},
+	{
+	  "id": "hive_world", "category": "home_world", "name": "Hive World", "cost": 3,
+	  "summary": "Crowded urban origins produce alert and socially capable soldiers.",
+	  "effects": {
+		"skills": ["common_lore_imperium", "deceive", "linguistics_low_gothic"], "wounds": -1,
+		"special_rules": [
+		  { "name": "Accustomed to Crowds", "summary": "Crowds are not Difficult Terrain; Running or Charging through them causes no related Agility penalty." },
+		  { "name": "Hivebound", "summary": "-10 to Survival tests outside enclosed or artificial environments." }
+		]
+	  },
+	  "choices": [
+		{ "id": "hive_characteristic_1", "prompt": "Hive World characteristic bonus 1", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "hive_characteristics", "options": [
+		  { "id": "agility", "label": "+3 Agility", "effects": { "characteristics": { "Agility": 3 } } },
+		  { "id": "fellowship", "label": "+3 Fellowship", "effects": { "characteristics": { "Fellowship": 3 } } },
+		  { "id": "perception", "label": "+3 Perception", "effects": { "characteristics": { "Perception": 3 } } }
+		] },
+		{ "id": "hive_characteristic_2", "prompt": "Hive World characteristic bonus 2", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "hive_characteristics", "options": [
+		  { "id": "agility", "label": "+3 Agility", "effects": { "characteristics": { "Agility": 3 } } },
+		  { "id": "fellowship", "label": "+3 Fellowship", "effects": { "characteristics": { "Fellowship": 3 } } },
+		  { "id": "perception", "label": "+3 Perception", "effects": { "characteristics": { "Perception": 3 } } }
+		] },
+		{ "id": "hive_urban_violence", "prompt": "Urban Violence talent", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "heightened_senses_hearing", "label": "Heightened Senses (Hearing)", "effects": { "talents": ["heightened_senses_hearing"] } },
+		  { "id": "paranoia", "label": "Paranoia", "effects": { "talents": ["paranoia"] } },
+		  { "id": "unremarkable", "label": "Unremarkable", "effects": { "talents": ["unremarkable"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 60, "page_end": 61 }
+	},
+	{
+	  "id": "imperial_world", "category": "home_world", "name": "Imperial World", "cost": 1,
+	  "summary": "Faithful and adaptable recruits from the broad mass of Imperial humanity.",
+	  "effects": {
+		"characteristics": { "Willpower": 3 },
+		"skills": ["common_lore_imperial_creed", "common_lore_imperium", "linguistics_low_gothic"],
+		"talents": ["hatred_mutants"],
+		"special_rules": [{ "name": "Blessed Ignorance", "summary": "-5 to all Forbidden Lore tests based on Intelligence." }]
+	  },
+	  "choices": [
+		{ "id": "imperial_other_characteristic", "prompt": "Imperial World additional characteristic", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "weapon_skill", "label": "+3 Weapon Skill", "effects": { "characteristics": { "Weapon Skill": 3 } } },
+		  { "id": "ballistic_skill", "label": "+3 Ballistic Skill", "effects": { "characteristics": { "Ballistic Skill": 3 } } },
+		  { "id": "strength", "label": "+3 Strength", "effects": { "characteristics": { "Strength": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } },
+		  { "id": "agility", "label": "+3 Agility", "effects": { "characteristics": { "Agility": 3 } } },
+		  { "id": "intelligence", "label": "+3 Intelligence", "effects": { "characteristics": { "Intelligence": 3 } } },
+		  { "id": "perception", "label": "+3 Perception", "effects": { "characteristics": { "Perception": 3 } } },
+		  { "id": "fellowship", "label": "+3 Fellowship", "effects": { "characteristics": { "Fellowship": 3 } } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 61 }
+	},
+	{
+	  "id": "penal_colony", "category": "home_world", "name": "Penal Colony", "cost": 2,
+	  "summary": "Ruthless and expendable convicts accustomed to illicit survival.",
+	  "effects": {
+		"skills": ["intimidate", "linguistics_low_gothic"], "wounds": 1, "standard_kit_points_base": 15,
+		"special_rules": [
+		  { "name": "Larcenous", "summary": "+10 to Logistics tests to acquire illegal or contraband items." },
+		  { "name": "Scum and Villainy", "summary": "The regiment begins with only 15 points for Standard Regimental Kit before unused creation-point bonuses." }
+		]
+	  },
+	  "choices": [
+		{ "id": "penal_characteristic_1", "prompt": "Penal Colony characteristic bonus 1", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "penal_characteristics", "options": [
+		  { "id": "agility", "label": "+3 Agility", "effects": { "characteristics": { "Agility": 3 } } },
+		  { "id": "strength", "label": "+3 Strength", "effects": { "characteristics": { "Strength": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } }
+		] },
+		{ "id": "penal_characteristic_2", "prompt": "Penal Colony characteristic bonus 2", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "penal_characteristics", "options": [
+		  { "id": "agility", "label": "+3 Agility", "effects": { "characteristics": { "Agility": 3 } } },
+		  { "id": "strength", "label": "+3 Strength", "effects": { "characteristics": { "Strength": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } }
+		] },
+		{ "id": "penal_honour_talent", "prompt": "Honour Amongst Thieves talent", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "peer_underworld", "label": "Peer (Underworld)", "effects": { "talents": ["peer_underworld"] } },
+		  { "id": "street_fighting", "label": "Street Fighting", "effects": { "talents": ["street_fighting"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 61, "page_end": 62 }
+	},
+	{
+	  "id": "penitent", "category": "home_world", "name": "Penitent", "cost": 3,
+	  "summary": "Zealous recruits seeking martyrdom or absolution in service.",
+	  "effects": {
+		"skills": ["common_lore_ecclesiarchy", "common_lore_imperial_creed", "intimidate", "linguistics_low_gothic"], "wounds": 2,
+		"special_rules": [
+		  { "name": "Only One Life to Give", "summary": "Must pass an Ordinary (+10) Willpower test to retreat or otherwise act for self-preservation." },
+		  { "name": "Untempered Zeal", "summary": "May re-roll failed Charm tests made to inspire religious fervour or righteous hatred." }
+		]
+	  },
+	  "choices": [
+		{ "id": "penitent_characteristic_1", "prompt": "Penitent characteristic bonus 1", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "penitent_characteristics", "options": [
+		  { "id": "fellowship", "label": "+3 Fellowship", "effects": { "characteristics": { "Fellowship": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } },
+		  { "id": "willpower", "label": "+3 Willpower", "effects": { "characteristics": { "Willpower": 3 } } }
+		] },
+		{ "id": "penitent_characteristic_2", "prompt": "Penitent characteristic bonus 2", "scope": "per_character", "minimum": 1, "maximum": 1, "unique_group": "penitent_characteristics", "options": [
+		  { "id": "fellowship", "label": "+3 Fellowship", "effects": { "characteristics": { "Fellowship": 3 } } },
+		  { "id": "toughness", "label": "+3 Toughness", "effects": { "characteristics": { "Toughness": 3 } } },
+		  { "id": "willpower", "label": "+3 Willpower", "effects": { "characteristics": { "Willpower": 3 } } }
+		] },
+		{ "id": "penitent_martyr_talent", "prompt": "The Blood of Martyrs talent", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "nerves_of_steel", "label": "Nerves of Steel", "effects": { "talents": ["nerves_of_steel"] } },
+		  { "id": "orthoproxy", "label": "Orthoproxy", "effects": { "talents": ["orthoproxy"] } },
+		  { "id": "unshakeable_faith", "label": "Unshakeable Faith", "effects": { "talents": ["unshakeable_faith"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 62 }
+	},
+	{
+	  "id": "schola_progenium", "category": "home_world", "name": "Schola Progenium", "cost": 3,
+	  "summary": "Orphans forged by strict tutors into disciplined servants of the Imperium.",
+	  "effects": {
+		"characteristics": { "Willpower": 3 },
+		"skills": ["common_lore_imperial_guard", "common_lore_imperium", "common_lore_war", "linguistics_high_gothic", "linguistics_low_gothic"],
+		"wounds": 1
+	  },
+	  "choices": [
+		{ "id": "schola_combat_characteristic", "prompt": "Schola Progenium combat characteristic", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "weapon_skill", "label": "+3 Weapon Skill", "effects": { "characteristics": { "Weapon Skill": 3 } } },
+		  { "id": "ballistic_skill", "label": "+3 Ballistic Skill", "effects": { "characteristics": { "Ballistic Skill": 3 } } }
+		] },
+		{ "id": "schola_duty_talent", "prompt": "Only In Death Does Duty End talent", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "air_of_authority", "label": "Air of Authority", "effects": { "talents": ["air_of_authority"] } },
+		  { "id": "unshakeable_faith", "label": "Unshakeable Faith", "effects": { "talents": ["unshakeable_faith"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 62 }
+	},
+
+	{ "id": "bilious", "category": "commander", "name": "Bilious", "cost": 2, "summary": "An ill-tempered and suspicious commander who prizes vigilance.", "effects": { "talents": ["paranoia"] }, "source": { "book": "ow_core", "page": 63 } },
+	{ "id": "circumspect", "category": "commander", "name": "Circumspect", "cost": 2, "summary": "A cautious commander who encourages observation before action.", "effects": { "talents": ["foresight"] }, "source": { "book": "ow_core", "page": 63 } },
+	{ "id": "choleric", "category": "commander", "name": "Choleric", "cost": 2, "summary": "A decisive commander who leads from the front.", "effects": { "talents": ["rapid_reaction"] }, "source": { "book": "ow_core", "page": 63 } },
+	{ "id": "fixed", "category": "commander", "name": "Fixed", "cost": 1, "summary": "A decisive but inflexible commander.", "effects": { "skills": ["command"] }, "source": { "book": "ow_core", "page": 63 } },
+	{ "id": "maverick", "category": "commander", "name": "Maverick", "cost": 2, "summary": "An unpredictable rebel whose daring inspires loyalty.", "effects": { "talents": ["resistance_fear"] }, "source": { "book": "ow_core", "page": 63 } },
+	{ "id": "melancholic", "category": "commander", "name": "Melancholic", "cost": 2, "summary": "A careful but pessimistic veteran whose troops develop initiative.", "effects": { "talents": ["air_of_authority"] }, "source": { "book": "ow_core", "page": 63 } },
+	{ "id": "phlegmatic", "category": "commander", "name": "Phlegmatic", "cost": 1, "summary": "A quiet, competent commander trusted for considered orders.", "effects": { "skills": ["common_lore_imperial_guard", "common_lore_war"] }, "source": { "book": "ow_core", "page": 63 } },
+	{ "id": "sanguine", "category": "commander", "name": "Sanguine", "cost": 2, "summary": "An optimistic and inspirational commander driven by glory.", "effects": { "talents": ["die_hard"] }, "source": { "book": "ow_core", "page": 63 } },
+	{ "id": "supine", "category": "commander", "name": "Supine", "cost": 1, "summary": "A devout commander who faithfully relays orders from above.", "effects": { "skills": ["common_lore_ecclesiarchy", "common_lore_imperial_creed"] }, "source": { "book": "ow_core", "page": 63 } },
+
+	{
+	  "id": "armoured_regiment", "category": "regiment_type", "name": "Armoured Regiment", "cost": 4,
+	  "summary": "Tank crews built around the firepower and resilience of armoured vehicles.",
+	  "effects": {
+		"characteristics": { "Weapon Skill": -3, "Intelligence": 3 }, "skills": ["operate_surface"], "talents": ["technical_knock"],
+		"equipment": [
+		  { "id": "leman_russ", "quantity": 1, "scope": "per_squad" },
+		  { "id": "maintenance_toolkit", "quantity": 1, "scope": "per_character" }
+		]
+	  },
+	  "source": { "book": "ow_core", "page": 64 }
+	},
+	{
+	  "id": "reconnaissance_regiment", "category": "regiment_type", "name": "Reconnaissance Regiment", "cost": 3,
+	  "summary": "Autonomous scouts trained to observe and ambush ahead of the main force.",
+	  "effects": { "characteristics": { "Perception": 3, "Willpower": -3 }, "skills": ["awareness"], "talents": ["combat_sense"], "equipment": [{ "id": "magnoculars", "quantity": 1, "scope": "per_character" }] },
+	  "choices": [
+		{ "id": "recon_vehicle", "prompt": "Reconnaissance squad vehicle", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "sentinel_scout", "label": "Sentinel Scout Walker", "effects": { "equipment": [{ "id": "sentinel_scout", "quantity": 1, "scope": "per_squad" }] } },
+		  { "id": "chimera", "label": "Chimera Armoured Transport", "effects": { "equipment": [{ "id": "chimera", "quantity": 1, "scope": "per_squad" }] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 64 }
+	},
+	{
+	  "id": "drop_troops", "category": "regiment_type", "name": "Drop Troops", "cost": 3,
+	  "summary": "Airborne infantry trained for rapid strikes beyond friendly lines.",
+	  "effects": {
+		"characteristics": { "Agility": 3, "Fellowship": -3 }, "skills": ["operate_aeronautica"], "talents": ["catfall"],
+		"equipment": [
+		  { "id": "lascarbine", "quantity": 1, "scope": "per_character", "slot": "main_weapon", "replace_slot": true },
+		  { "id": "charge_pack", "quantity": 4, "scope": "per_character", "merge": "replace" },
+		  { "id": "guard_flak_armour", "quantity": 1, "scope": "per_character", "slot": "armour", "replace_slot": true },
+		  { "id": "respirator", "quantity": 1, "scope": "per_character" },
+		  { "id": "grav_chute", "quantity": 1, "scope": "per_character" },
+		  { "id": "frag_grenade", "quantity": 2, "scope": "per_character" },
+		  { "id": "smoke_grenade", "quantity": 2, "scope": "per_character" }
+		]
+	  },
+	  "source": { "book": "ow_core", "page": 65 }
+	},
+	{
+	  "id": "hunter_killer", "category": "regiment_type", "name": "Hunter-Killer", "cost": 3,
+	  "summary": "Fast vehicle units held back to destroy priority targets.",
+	  "effects": { "characteristics": { "Ballistic Skill": 3, "Strength": -3 }, "skills": ["operate_surface"], "talents": ["resistance_fear"] },
+	  "choices": [
+		{ "id": "hunter_killer_vehicle", "prompt": "Hunter-Killer squad vehicle", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "sentinel_scout", "label": "Sentinel Scout Walker", "effects": { "equipment": [{ "id": "sentinel_scout", "quantity": 1, "scope": "per_squad" }] } },
+		  { "id": "hellhound", "label": "Hellhound Support Tank or variant", "effects": { "equipment": [{ "id": "hellhound", "quantity": 1, "scope": "per_squad" }] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 65 }
+	},
+	{
+	  "id": "light_infantry", "category": "regiment_type", "name": "Light Infantry", "cost": 2,
+	  "summary": "Mobile infantry trained for dense terrain, ambushes, and skirmishing.",
+	  "effects": {
+		"characteristics": { "Agility": 3, "Toughness": -3 }, "skills": ["navigate_surface"], "talents": ["sprint"],
+		"equipment": [
+		  { "id": "lascarbine", "quantity": 1, "scope": "per_character", "slot": "main_weapon", "replace_slot": true },
+		  { "id": "charge_pack", "quantity": 4, "scope": "per_character", "merge": "replace" },
+		  { "id": "flak_vest", "quantity": 1, "scope": "per_character", "slot": "armour", "merge": "replace" },
+		  { "id": "flak_helmet", "quantity": 1, "scope": "per_character" },
+		  { "id": "frag_grenade", "quantity": 2, "scope": "per_character" },
+		  { "id": "smoke_grenade", "quantity": 2, "scope": "per_character" }
+		]
+	  },
+	  "source": { "book": "ow_core", "page": 65 }
+	},
+	{
+	  "id": "line_infantry", "category": "regiment_type", "name": "Line Infantry", "cost": 2,
+	  "summary": "The backbone of assaults, defences, and conventional battle lines.",
+	  "effects": {
+		"characteristics": { "Strength": 3, "Intelligence": -3 }, "skills": ["athletics"], "talents": ["rapid_reload"],
+		"equipment": [
+		  { "id": "m36_lasgun", "quantity": 1, "scope": "per_character", "slot": "main_weapon", "replace_slot": true },
+		  { "id": "charge_pack", "quantity": 4, "scope": "per_character", "merge": "replace" },
+		  { "id": "guard_flak_armour", "quantity": 1, "scope": "per_character", "slot": "armour", "replace_slot": true },
+		  { "id": "frag_grenade", "quantity": 2, "scope": "per_character" },
+		  { "id": "krak_grenade", "quantity": 2, "scope": "per_character" }
+		]
+	  },
+	  "source": { "book": "ow_core", "page": 65 }
+	},
+	{
+	  "id": "mechanised_infantry", "category": "regiment_type", "name": "Mechanised Infantry", "cost": 3,
+	  "summary": "Mobile infantry paired with Chimera armoured transports.",
+	  "effects": {
+		"characteristics": { "Agility": 3, "Perception": -3 }, "skills": ["operate_surface"], "talents": ["rapid_reload"],
+		"equipment": [
+		  { "id": "m36_lasgun", "quantity": 1, "scope": "per_character", "slot": "main_weapon", "replace_slot": true },
+		  { "id": "charge_pack", "quantity": 4, "scope": "per_character", "merge": "replace" },
+		  { "id": "guard_flak_armour", "quantity": 1, "scope": "per_character", "slot": "armour", "replace_slot": true },
+		  { "id": "frag_grenade", "quantity": 2, "scope": "per_character" },
+		  { "id": "krak_grenade", "quantity": 2, "scope": "per_character" },
+		  { "id": "chimera", "quantity": 1, "scope": "per_squad" }
+		]
+	  },
+	  "source": { "book": "ow_core", "page": 65 }
+	},
+	{
+	  "id": "siege_infantry", "category": "regiment_type", "name": "Siege Infantry", "cost": 2,
+	  "summary": "Entrenched infantry trained for prolonged siege warfare.",
+	  "effects": {
+		"characteristics": { "Toughness": 3, "Intelligence": -3 }, "skills": ["tech_use"], "talents": ["nerves_of_steel"],
+		"equipment": [
+		  { "id": "m36_lasgun", "quantity": 1, "scope": "per_character", "slot": "main_weapon", "replace_slot": true },
+		  { "id": "charge_pack", "quantity": 6, "scope": "per_character", "merge": "replace" },
+		  { "id": "guard_flak_armour", "quantity": 1, "scope": "per_character", "slot": "armour", "replace_slot": true },
+		  { "id": "respirator", "quantity": 1, "scope": "per_character" },
+		  { "id": "empty_sandbag", "quantity": 4, "scope": "per_character" },
+		  { "id": "entrenching_tool", "quantity": 1, "scope": "per_character" },
+		  { "id": "frag_grenade", "quantity": 2, "scope": "per_character" },
+		  { "id": "photon_flash_grenade", "quantity": 2, "scope": "per_character" }
+		]
+	  },
+	  "source": { "book": "ow_core", "page": 65 }
+	},
+
+	{
+	  "id": "close_order_drill", "category": "training_doctrine", "name": "Close Order Drill", "cost": 2,
+	  "summary": "Training emphasises coordinated action in close formations.", "effects": {},
+	  "choices": [
+		{ "id": "close_order_talent", "prompt": "Close Order Drill talent", "scope": "per_character", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "combat_formation", "label": "Combat Formation", "effects": { "talents": ["combat_formation"] } },
+		  { "id": "double_team", "label": "Double Team", "effects": { "talents": ["double_team"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 66 }
+	},
+	{ "id": "die_hards", "category": "training_doctrine", "name": "Die-Hards", "cost": 3, "summary": "Unyielding troops trained not to falter under battlefield horrors.", "effects": { "aptitudes": ["Toughness"] }, "source": { "book": "ow_core", "page": 66 } },
+	{
+	  "id": "favoured_foe", "category": "training_doctrine", "name": "Favoured Foe", "cost": 3,
+	  "summary": "The regiment has learned to identify and destroy one traditional enemy.", "effects": {},
+	  "choices": [
+		{ "id": "favoured_foe_enemy", "prompt": "Favoured Foe enemy", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "orks", "label": "Orks", "effects": { "skills": ["forbidden_lore_xenos"], "talents": ["hatred_orks"] } },
+		  { "id": "chaos", "label": "Chaos forces", "effects": { "skills": ["forbidden_lore_heresy"], "talents": ["hatred_chaos"] } },
+		  { "id": "daemons", "label": "Daemons", "effects": { "skills": ["forbidden_lore_daemonology"], "talents": ["hatred_daemons"] } },
+		  { "id": "eldar", "label": "Eldar", "effects": { "skills": ["forbidden_lore_xenos"], "talents": ["hatred_eldar"] } },
+		  { "id": "dark_eldar", "label": "Dark Eldar", "effects": { "skills": ["forbidden_lore_xenos"], "talents": ["hatred_dark_eldar"] } },
+		  { "id": "mutants", "label": "Mutants", "effects": { "skills": ["forbidden_lore_mutants"], "talents": ["hatred_mutants"] } },
+		  { "id": "tau", "label": "Tau", "effects": { "skills": ["forbidden_lore_xenos"], "talents": ["hatred_tau"] } },
+		  { "id": "tyranids", "label": "Tyranids", "effects": { "skills": ["forbidden_lore_xenos"], "talents": ["hatred_tyranids"] } },
+		  { "id": "other_enemy", "label": "Other GM-approved enemy", "effects": { "skills": ["forbidden_lore_other_enemy"], "talents": ["hatred_other_enemy"] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 66 }
+	},
+	{
+	  "id": "hardened_fighters", "category": "training_doctrine", "name": "Hardened Fighters", "cost": 2,
+	  "summary": "Vicious close-combat training backed by improved melee weapons.",
+	  "effects": { "characteristics": { "Weapon Skill": 2 }, "talents": ["street_fighting"] },
+	  "choices": [
+		{ "id": "hardened_fighters_weapon", "prompt": "Hardened Fighters melee kit", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "low_tech_weapon", "label": "Replace with a chosen Common Low-Tech weapon", "effects": { "equipment": [{ "id": "common_low_tech_weapon", "quantity": 1, "scope": "per_character", "slot": "melee_weapon", "replace_slot": true }] } },
+		  { "id": "mono_upgrade", "label": "Apply mono to the standard melee weapon", "effects": { "equipment": [{ "id": "mono_melee_upgrade", "quantity": 1, "scope": "per_character", "merge": "unique" }] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 66 }
+	},
+	{ "id": "iron_discipline", "category": "training_doctrine", "name": "Iron Discipline", "cost": 3, "summary": "Absolute loyalty and devotion to orders.", "effects": { "aptitudes": ["Willpower"] }, "source": { "book": "ow_core", "page": 66 } },
+	{ "id": "sharpshooters", "category": "training_doctrine", "name": "Sharpshooters", "cost": 4, "summary": "The regiment produces exceptionally precise marksmen.", "effects": { "aptitudes": ["Ballistic Skill"], "talents": ["deadeye_shot"] }, "source": { "book": "ow_core", "page": 66 } },
+	{
+	  "id": "survivalists", "category": "training_doctrine", "name": "Survivalists", "cost": 4,
+	  "summary": "Specialists in tracking, navigation, and survival within one terrain.",
+	  "effects": { "aptitudes": ["Agility"] },
+	  "choices": [
+		{ "id": "survivalist_terrain", "prompt": "Survivalists terrain", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "desert", "label": "Desert", "effects": { "special_rules": [{ "name": "Survivalists - Desert", "summary": "Re-roll failed Survival and Navigate (Surface) tests in desert terrain." }] } },
+		  { "id": "jungle", "label": "Jungle", "effects": { "special_rules": [{ "name": "Survivalists - Jungle", "summary": "Re-roll failed Survival and Navigate (Surface) tests in jungle terrain." }] } },
+		  { "id": "tundra", "label": "Tundra", "effects": { "special_rules": [{ "name": "Survivalists - Tundra", "summary": "Re-roll failed Survival and Navigate (Surface) tests in tundra terrain." }] } },
+		  { "id": "ash_wastes", "label": "Ash Wastes", "effects": { "special_rules": [{ "name": "Survivalists - Ash Wastes", "summary": "Re-roll failed Survival and Navigate (Surface) tests in ash-waste terrain." }] } },
+		  { "id": "urban_ruins", "label": "Urban Ruins", "effects": { "special_rules": [{ "name": "Survivalists - Urban Ruins", "summary": "Re-roll failed Survival and Navigate (Surface) tests in urban ruins." }] } },
+		  { "id": "other_terrain", "label": "Other GM-approved terrain", "effects": { "special_rules": [{ "name": "Survivalists - Chosen Terrain", "summary": "Re-roll failed Survival and Navigate (Surface) tests in the GM-approved terrain." }] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 66 }
+	},
+
+	{
+	  "id": "augmetics", "category": "equipment_doctrine", "name": "Augmetics", "cost": 2,
+	  "summary": "Strong Mechanicus ties make bionic replacements easier to obtain.",
+	  "effects": { "special_rules": [{ "name": "Augmetics", "summary": "+10 to Logistics tests to obtain bionic replacements and implants." }] },
+	  "source": { "book": "ow_core", "page": 67 }
+	},
+	{
+	  "id": "chameleoline", "category": "equipment_doctrine", "name": "Chameleoline", "cost": 3,
+	  "summary": "Colour-shifting material helps the regiment blend into its surroundings.", "effects": {},
+	  "choices": [
+		{ "id": "chameleoline_kit", "prompt": "Chameleoline equipment", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "cloaks", "label": "Chameleoline cloaks", "effects": { "equipment": [{ "id": "chameleoline_cloak", "quantity": 1, "scope": "per_character" }] } },
+		  { "id": "coated_armour", "label": "Chameleoline-coated armour", "effects": { "equipment": [{ "id": "chameleoline_armour", "quantity": 1, "scope": "per_character" }] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 67 }
+	},
+	{
+	  "id": "combat_drugs", "category": "equipment_doctrine", "name": "Combat Drugs", "cost": 2,
+	  "summary": "Chemical encouragement is issued through an injector or inhaler.", "effects": {},
+	  "choices": [
+		{ "id": "combat_drug_applicator", "prompt": "Combat drug applicator", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "injector", "label": "Injector", "effects": { "equipment": [{ "id": "injector", "quantity": 1, "scope": "per_character" }] } },
+		  { "id": "inhaler", "label": "Inhaler", "effects": { "equipment": [{ "id": "inhaler", "quantity": 1, "scope": "per_character" }] } }
+		] },
+		{ "id": "combat_drug_doses", "prompt": "Combat drug doses", "scope": "regiment", "minimum": 1, "maximum": 1, "options": [
+		  { "id": "frenzon", "label": "Three doses of frenzon", "effects": { "equipment": [{ "id": "frenzon_dose", "quantity": 3, "scope": "per_character" }] } },
+		  { "id": "stimm", "label": "Five doses of stimm", "effects": { "equipment": [{ "id": "stimm_dose", "quantity": 5, "scope": "per_character" }] } }
+		] }
+	  ],
+	  "source": { "book": "ow_core", "page": 67 }
+	},
+	{
+	  "id": "demolitions", "category": "equipment_doctrine", "name": "Demolitions", "cost": 3,
+	  "summary": "The regiment has improved access to explosive munitions.",
+	  "effects": { "special_rules": [{ "name": "Demolitions", "summary": "+10 to Logistics tests for grenades, missiles, explosives, and special tank ammunition." }] },
+	  "source": { "book": "ow_core", "page": 67 }
+	},
+	{
+	  "id": "scavengers", "category": "equipment_doctrine", "name": "Scavengers", "cost": 3,
+	  "summary": "The regiment supplements official supply by scavenging useful materiel.",
+	  "effects": { "special_rules": [{ "name": "Scavengers", "summary": "May gain +10 on a Logistics test; doubles attract unwanted attention." }] },
+	  "source": { "book": "ow_core", "page": 67 }
+	},
+	{
+	  "id": "warrior_weapons", "category": "equipment_doctrine", "name": "Warrior Weapons", "cost": 3,
+	  "summary": "Primitive close-combat arms replace the regiment's normal main weapon.",
+	  "effects": {
+		"skills": ["parry"],
+		"equipment": [
+		  { "id": "common_low_tech_weapon", "quantity": 1, "scope": "per_character", "slot": "main_weapon", "replace_slot": true },
+		  { "id": "laspistol", "quantity": 1, "scope": "per_character" },
+		  { "id": "charge_pack", "quantity": 2, "scope": "per_character", "merge": "replace" }
+		]
+	  },
+	  "source": { "book": "ow_core", "page": 67 }
+	},
+	{
+	  "id": "well_provisioned", "category": "equipment_doctrine", "name": "Well-Provisioned", "cost": 3,
+	  "summary": "Supply priority increases ammunition, rations, and existing grenade allocations.",
+	  "effects": {
+		"equipment": [{ "id": "rations", "quantity": 2, "scope": "per_character", "merge": "add" }],
+		"equipment_adjustments": [
+		  { "target": "main_weapon_ammunition", "quantity": 2 },
+		  { "tag": "grenade", "quantity": 1 }
+		],
+		"special_rules": [{ "name": "Vehicle Supply Priority", "summary": "If the regiment contains vehicles, gain +10 to Logistics tests for repair and maintenance fuel and parts." }]
+	  },
+	  "source": { "book": "ow_core", "page": 67 }
+	}
+  ]
+}

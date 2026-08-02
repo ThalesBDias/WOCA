@@ -1,0 +1,12 @@
+# Godot generated state
+.godot/
+.import/
+
+# OWCA test runtime data
+OWCA/.test_user/
+tmp/
+
+# Local builds and editor recovery files
+*.exe
+*.pck
+*.tmp
