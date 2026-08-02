@@ -8,6 +8,9 @@ func _init() -> void:
 	_assert_equal(regiment_repository.load_data(), OK, "regiment catalog loads")
 	var character_repository := CharacterDataRepository.new()
 	_assert_equal(character_repository.load_data(), OK, "Guardsman Speciality catalog loads")
+	_assert_equal(character_repository.get_advancement_entries("characteristics").size(), 9, "nine Characteristic advancement tracks")
+	_assert_true(character_repository.get_advancement_entries("skills").size() >= 40, "Core Skill advancement catalog loads")
+	_assert_true(character_repository.get_advancement_entries("talents").size() >= 50, "curated Guardsman Talent advancement catalog loads")
 	_assert_equal(character_repository.get_specialities().size(), 5, "five Core Guardsman Specialities")
 	_assert_speciality(character_repository, "heavy_gunner", 10, 4)
 	_assert_speciality(character_repository, "medic", 8, 3)
@@ -104,15 +107,81 @@ func _init() -> void:
 	_assert_true(aptitude_result["valid"], "duplicate Aptitude replacement resolves")
 	_assert_true("Strength" in aptitude_result["aptitudes"], "replacement Aptitude is applied")
 
+	# XP purchases use Aptitude matches, existing Skill ranks, prerequisites, and the ordered ledger.
+	var xp_state := CharacterState.new()
+	xp_state.set_regiment(regiment_state.to_dict(), str(regiment_repository.data.get("content_version", "")))
+	_fill_base_characteristics(xp_state, 40)
+	xp_state.set_speciality("operator")
+	xp_state.set_wounds_roll(3)
+	xp_state.set_fate_roll(8)
+	_resolve_varanox_choices(xp_state)
+	xp_state.set_choice("speciality", "operator_knowledge_skill", "common_lore_tech")
+	xp_state.set_choice("speciality", "operator_weapon_training", "las")
+	var xp_result := calculator.calculate(xp_state, regiment_repository, character_repository)
+	_assert_true(xp_result["advancement_ready"], "complete character can spend XP")
+	var weapon_tech_before := _entry_by_id(xp_result["advancement_options"], "talent:weapon_tech")
+	_assert_true(not weapon_tech_before["available"], "Weapon-Tech is locked before Tech-Use +10")
+	xp_state.purchase_advance("skill:tech_use")
+	xp_result = calculator.calculate(xp_state, regiment_repository, character_repository)
+	_assert_equal(xp_result["xp_spent"], 200, "two-Aptitude Trained Skill costs 200 XP")
+	_assert_equal(_entry_by_id(xp_result["skills"], "tech_use")["rank"], 2, "starting Known Skill advances to Trained +10")
+	var weapon_tech_option := _entry_by_id(xp_result["advancement_options"], "talent:weapon_tech")
+	_assert_true(weapon_tech_option["available"], "Tech-Use +10 unlocks Weapon-Tech")
+	_assert_equal(weapon_tech_option["cost"], 200, "two-Aptitude Tier 1 Talent costs 200 XP")
+	xp_state.purchase_advance("talent:weapon_tech")
+	xp_result = calculator.calculate(xp_state, regiment_repository, character_repository)
+	_assert_true(xp_result["valid"], "ordered prerequisite purchases remain valid")
+	_assert_equal(xp_result["xp_spent"], 400, "XP ledger totals purchases")
+	_assert_equal(xp_result["xp_remaining"], 200, "XP ledger reports remaining budget")
+	_assert_true(_entry_exists(xp_result["talents"], "weapon_tech"), "purchased Talent joins calculated Talents")
+	var next_tech_use := _entry_by_id(xp_result["advancement_options"], "skill:tech_use")
+	_assert_equal(next_tech_use["cost"], 300, "next Skill rank uses the Experienced cost column")
+	_assert_true(not next_tech_use["available"], "unaffordable next rank is disabled")
+
+	var characteristic_state := CharacterState.new()
+	_assert_equal(characteristic_state.from_dict(xp_state.to_dict()), OK, "clone XP test state")
+	characteristic_state.clear_advances()
+	characteristic_state.purchase_advance("characteristic:intelligence")
+	var characteristic_result := calculator.calculate(characteristic_state, regiment_repository, character_repository)
+	_assert_equal(characteristic_result["xp_spent"], 250, "one-Aptitude Simple Characteristic advance costs 250 XP")
+	_assert_equal(characteristic_result["characteristics"]["Intelligence"], 45, "Characteristic purchase adds 5")
+	var next_intelligence := _entry_by_id(characteristic_result["advancement_options"], "characteristic:intelligence")
+	_assert_equal(next_intelligence["cost"], 500, "next Characteristic purchase is Intermediate")
+	_assert_true(not next_intelligence["available"], "unaffordable Intermediate advance is disabled")
+
+	var wounds_state := CharacterState.new()
+	_assert_equal(wounds_state.from_dict(xp_state.to_dict()), OK, "clone repeatable Talent state")
+	wounds_state.clear_advances()
+	wounds_state.purchase_advance("talent:sound_constitution")
+	wounds_state.purchase_advance("talent:sound_constitution")
+	var wounds_result := calculator.calculate(wounds_state, regiment_repository, character_repository)
+	_assert_equal(wounds_result["xp_spent"], 600, "repeatable one-Aptitude Tier 1 Talent costs 300 XP each")
+	_assert_equal(wounds_result["wounds"], 10, "Sound Constitution purchases add to maximum Wounds")
+	_assert_equal(_entry_by_id(wounds_result["talents"], "sound_constitution")["count"], 2, "repeatable Talent keeps its purchase count")
+
+	var invalid_order := CharacterState.new()
+	_assert_equal(invalid_order.from_dict(xp_state.to_dict()), OK, "clone ordered ledger")
+	invalid_order.remove_advance_at(0)
+	var invalid_order_result := calculator.calculate(invalid_order, regiment_repository, character_repository)
+	_assert_true(not invalid_order_result["valid"], "removing a prerequisite invalidates the dependent purchase")
+	_assert_equal(invalid_order_result["xp_spent"], 0, "invalid dependent purchase spends no XP")
+
 	var persistence := CharacterPersistence.new()
-	var save_result := persistence.save_character("user://owca_character_roundtrip.json", state, result, character_repository)
+	var save_result := persistence.save_character("user://owca_character_roundtrip.json", xp_state, xp_result, character_repository)
 	_assert_equal(save_result["error"], OK, "save character JSON")
 	var loaded := CharacterState.new()
 	var load_result := persistence.load_character("user://owca_character_roundtrip.json", loaded)
 	_assert_equal(load_result["error"], OK, "load character JSON")
 	var loaded_result := calculator.calculate(loaded, regiment_repository, character_repository)
 	_assert_true(loaded_result["valid"], "loaded character remains valid")
-	_assert_equal(loaded_result["characteristics"], result["characteristics"], "character save/load calculation is stable")
+	_assert_equal(loaded_result["xp_spent"], 400, "character save/load preserves XP purchases")
+	_assert_equal(loaded.purchased_advances, xp_state.purchased_advances, "ordered XP ledger round-trips")
+	var legacy_data := state.to_dict()
+	legacy_data["version"] = 1
+	legacy_data.erase("purchased_advances")
+	var legacy_state := CharacterState.new()
+	_assert_equal(legacy_state.from_dict(legacy_data), OK, "version 1 character state remains loadable")
+	_assert_true(legacy_state.purchased_advances.is_empty(), "legacy character starts with an empty XP ledger")
 
 	print("OWCA character calculator tests passed.")
 	quit(0)
@@ -135,6 +204,14 @@ func _entry_exists(entries: Array, entry_id: String) -> bool:
 		if str(entry.get("id", "")) == entry_id:
 			return true
 	return false
+
+
+func _entry_by_id(entries: Array, entry_id: String) -> Dictionary:
+	for entry: Dictionary in entries:
+		if str(entry.get("id", "")) == entry_id:
+			return entry
+	_assert_true(false, "entry exists: %s" % entry_id)
+	return {}
 
 
 func _equipment_quantity(entries: Array, entry_id: String) -> int:

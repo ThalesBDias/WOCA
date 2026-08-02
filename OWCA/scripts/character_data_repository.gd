@@ -4,17 +4,20 @@ extends RefCounted
 ## Loads the first character-creation slice: the five Core Guardsman Specialities.
 
 const DEFAULT_DATA_PATH := "res://OWCA/data/guardsman_specialities.json"
+const DEFAULT_ADVANCEMENT_PATH := "res://OWCA/data/guardsman_advancements.json"
 
 var data: Dictionary = {}
+var advancement_data: Dictionary = {}
 var last_error: String = ""
 var _specialities_by_id: Dictionary = {}
 var _choices_by_id: Dictionary = {}
 
 
-func load_data(path: String = DEFAULT_DATA_PATH) -> Error:
+func load_data(path: String = DEFAULT_DATA_PATH, advancement_path: String = DEFAULT_ADVANCEMENT_PATH) -> Error:
 	last_error = ""
 	_specialities_by_id.clear()
 	_choices_by_id.clear()
+	advancement_data.clear()
 
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
@@ -40,6 +43,12 @@ func load_data(path: String = DEFAULT_DATA_PATH) -> Error:
 		_specialities_by_id.clear()
 		_choices_by_id.clear()
 		return ERR_INVALID_DATA
+
+	var advancement_error := _load_advancement_data(advancement_path)
+	if advancement_error != OK:
+		_specialities_by_id.clear()
+		_choices_by_id.clear()
+		return advancement_error
 	return OK
 
 
@@ -60,7 +69,10 @@ func get_choice(choice_id: String) -> Dictionary:
 
 
 func get_catalog_entry(catalog: String, entry_id: String) -> Dictionary:
-	return (data.get(catalog, {}) as Dictionary).get(entry_id, {}) as Dictionary
+	var starting_entry := (data.get(catalog, {}) as Dictionary).get(entry_id, {}) as Dictionary
+	if not starting_entry.is_empty():
+		return starting_entry
+	return (advancement_data.get(catalog, {}) as Dictionary).get(entry_id, {}) as Dictionary
 
 
 func get_catalog_name(catalog: String, entry_id: String) -> String:
@@ -71,6 +83,8 @@ func get_catalog_name(catalog: String, entry_id: String) -> String:
 func get_source_label(source_reference: Dictionary) -> String:
 	var source_id := str(source_reference.get("book", ""))
 	var source := (data.get("sources", {}) as Dictionary).get(source_id, {}) as Dictionary
+	if source.is_empty():
+		source = (advancement_data.get("sources", {}) as Dictionary).get(source_id, {}) as Dictionary
 	var title := str(source.get("short", source.get("title", source_id)))
 	var page := int(source_reference.get("page", 0))
 	var page_end := int(source_reference.get("page_end", 0))
@@ -85,6 +99,82 @@ func get_speciality_choice_ids(speciality_id: String) -> Array[String]:
 		if value is Dictionary:
 			output.append(str((value as Dictionary).get("id", "")))
 	return output
+
+
+func get_advancement_entries(kind: String) -> Dictionary:
+	return advancement_data.get(kind, {}) as Dictionary
+
+
+func get_advancement_entry(kind: String, entry_id: String) -> Dictionary:
+	return get_advancement_entries(kind).get(entry_id, {}) as Dictionary
+
+
+func get_advancement_costs(kind: String) -> Dictionary:
+	return (advancement_data.get("costs", {}) as Dictionary).get(kind, {}) as Dictionary
+
+
+func get_advancement_source(kind: String, entry: Dictionary) -> Dictionary:
+	var source := entry.get("source", {}) as Dictionary
+	if not source.is_empty():
+		return source
+	return ((advancement_data.get("source_defaults", {}) as Dictionary).get(kind, {}) as Dictionary).duplicate(true)
+
+
+func _load_advancement_data(path: String) -> Error:
+	advancement_data.clear()
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		last_error = "Could not open character advancement data: %s" % path
+		return FileAccess.get_open_error()
+	var parser := JSON.new()
+	var parse_error := parser.parse(file.get_as_text())
+	if parse_error != OK:
+		last_error = "Character advancement JSON line %d: %s" % [parser.get_error_line(), parser.get_error_message()]
+		return parse_error
+	if not parser.data is Dictionary:
+		last_error = "Character advancement JSON root must be an object."
+		return ERR_PARSE_ERROR
+	advancement_data = parser.data as Dictionary
+	if int(advancement_data.get("schema_version", 0)) != 1:
+		last_error = "Unsupported character advancement schema version."
+		return ERR_INVALID_DATA
+	var validation_error := _validate_advancement_data()
+	if not validation_error.is_empty():
+		last_error = validation_error
+		advancement_data.clear()
+		return ERR_INVALID_DATA
+	return OK
+
+
+func _validate_advancement_data() -> String:
+	for kind in ["characteristic", "skill", "talent"]:
+		var cost_table := get_advancement_costs(kind)
+		var expected_size := 3 if kind == "talent" else 4
+		for match_key in ["two", "one", "zero"]:
+			if not cost_table.get(match_key, []) is Array or (cost_table.get(match_key, []) as Array).size() != expected_size:
+				return "Advancement %s costs need %d entries for '%s'." % [kind, expected_size, match_key]
+	var valid_aptitudes: Dictionary = {}
+	for speciality in get_specialities():
+		for aptitude: Variant in (speciality.get("effects", {}) as Dictionary).get("aptitudes", []):
+			valid_aptitudes[str(aptitude)] = true
+	for aptitude in ["Agility", "Ballistic Skill", "Defence", "Fellowship", "Fieldcraft", "Finesse", "General", "Intelligence", "Knowledge", "Leadership", "Offence", "Perception", "Psyker", "Social", "Strength", "Tech", "Toughness", "Weapon Skill", "Willpower"]:
+		valid_aptitudes[aptitude] = true
+	for kind in ["characteristics", "skills", "talents"]:
+		if not advancement_data.get(kind, {}) is Dictionary:
+			return "Character advancements must contain a '%s' object." % kind
+		for entry_id: Variant in get_advancement_entries(kind):
+			var entry := get_advancement_entry(kind, str(entry_id))
+			if str(entry.get("name", "")).is_empty():
+				return "Advancement '%s:%s' needs a name." % [kind, entry_id]
+			var aptitudes := entry.get("aptitudes", []) as Array
+			if aptitudes.size() != 2:
+				return "Advancement '%s:%s' needs exactly two Aptitudes." % [kind, entry_id]
+			for aptitude: Variant in aptitudes:
+				if not valid_aptitudes.has(str(aptitude)):
+					return "Advancement '%s:%s' uses unknown Aptitude '%s'." % [kind, entry_id, aptitude]
+			if kind == "talents" and int(entry.get("tier", 0)) not in [1, 2, 3]:
+				return "Talent '%s' needs a tier from 1 to 3." % entry_id
+	return ""
 
 
 func _validate_loaded_data() -> String:

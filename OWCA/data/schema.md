@@ -36,3 +36,22 @@ A choice belongs to its parent option and contains `id`, `prompt`, `minimum`, `m
 `requirements.all` means every listed option ID must be selected. `requirements.any` means at least one listed option ID must be selected. `excludes` lists incompatible option IDs. These checks are symmetrical at calculation time even if only one side declares the exclusion.
 
 The UI reads `selection_rules`; category limits and doctrine-slot participation are therefore data rather than widget logic.
+
+## Character advancement data schema (v1)
+
+`guardsman_advancements.json` keeps XP rules separate from Speciality starting packages. Its `costs` object contains three matrices: `characteristic`, `skill`, and `talent`. Each matrix has `two`, `one`, and `zero` arrays selected by the number of matching Aptitudes. Characteristic and Skill arrays have four sequential entries; Talent arrays have one entry for each of three tiers.
+
+Every Characteristic or Skill entry provides a display `name`, exactly two `aptitudes`, an optional `recommended_for` array of Speciality IDs, and an optional `source`. Talent entries additionally provide `tier`, `prerequisites`, and optional `repeatable`.
+
+Supported prerequisite objects are:
+
+- `characteristic`: requires a named Characteristic at `minimum`.
+- `skill`: requires a Skill ID at `minimum_rank`, where 1 is Known and 2 is Trained (+10).
+- `talent`: requires one Talent ID.
+- `talent_any`: requires any Talent from an explicit `ids` array.
+- `talent_prefix_count`: requires a minimum number of known Talents whose stable IDs share a prefix.
+- `skill_prefix`: requires any known Skill specialisation whose stable ID shares a prefix.
+
+Each prerequisite includes a short `label` for the UI. Full rule text is deliberately omitted. When an entry has no explicit source, `source_defaults` supplies the book and printed-page reference for its category.
+
+Character state version 2 stores purchases as an ordered array of stable IDs such as `characteristic:agility`, `skill:dodge`, or `talent:rapid_reload`. Replaying the list in order makes rank costs and prerequisite chains deterministic. Removing an earlier purchase causes every later purchase to be validated again.

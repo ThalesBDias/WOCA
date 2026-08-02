@@ -1,4 +1,4 @@
-# Only War Character Assistant v0.3
+# Only War Character Assistant v0.4 development
 
 This module is a data-driven Godot 4 regiment and Guardsman creation assistant. Regiment creation includes every Core Rulebook option in the five supported categories: 8 Home Worlds, 9 Commanding Officers, 8 Regiment Types, 7 Training Doctrines, and 7 Equipment Doctrines. The current character-creation testing slice implements the five Core Guardsman Specialities: Heavy Gunner, Medic, Operator, Sergeant, and Weapon Specialist. Entries were checked against the supplied Only War Core Rulebook PDF; content files record printed book pages rather than PDF viewer indices.
 
@@ -17,6 +17,7 @@ OWCA/
   data/
     regiment_options.json       Regiment rules and catalog data
     guardsman_specialities.json Five Core Guardsman starting packages
+    guardsman_advancements.json XP costs, Aptitudes, prerequisites, and test catalog
     regiment_options.schema.json Formal JSON Schema (Draft 2020-12)
     schema.md                    Data contract and extension guide
   examples/
@@ -31,7 +32,10 @@ OWCA/
     character_data_repository.gd Character rules loading and lookup
     character_state.gd          Serializable individual inputs
     character_calculator.gd     Character aggregation and validation
+    character_advancement_calculator.gd Ordered XP ledger and purchase validation
     character_persistence.gd    Character JSON save/load
+    character_sheet_exporter.gd Off-screen A4 page rendering and export orchestration
+    pdf_image_writer.gd         Dependency-free image-to-PDF writer
   ui/
     landing_page.gd             Landing-page controller
     LandingPage.tscn            Main scene and workflow selection
@@ -39,9 +43,11 @@ OWCA/
     RegimentCreator.tscn        Regiment workflow
     character_creator.gd        Guardsman workflow UI/controller
     CharacterCreator.tscn       Guardsman workflow scene
+    printable_character_sheet.gd Original two-page field-dossier drawing
   tests/
     regiment_calculator_test.gd Headless smoke tests
     character_calculator_test.gd Guardsman package and persistence tests
+    character_sheet_export_test.gd Normal-renderer PDF/PNG visual test
 ```
 
 ## Run
@@ -56,6 +62,13 @@ On a fresh clone, let Godot build its generated global-class cache before runnin
 godot --headless --editor --path . --quit
 godot --headless --path . --script res://OWCA/tests/regiment_calculator_test.gd
 godot --headless --path . --script res://OWCA/tests/character_calculator_test.gd
+godot --headless --path . --script res://OWCA/tests/character_ui_layout_test.gd
+```
+
+The character-sheet visual test needs a real renderer because Godot's Windows headless display driver is a dummy. It runs minimized and writes the example output to the path in `OWCA_PDF_OUTPUT`:
+
+```text
+godot --rendering-method gl_compatibility --path . --script res://OWCA/tests/character_sheet_export_test.gd
 ```
 
 The Regiment Creator resolves only regiment-wide decisions. Choices marked `per_character` are listed as deferred benefits, do not prevent a regiment from being valid, and are not answered or stored as resolutions in the regiment file. The file carries a snapshot of those choice definitions for the future Character Creator.
@@ -64,7 +77,13 @@ Save files use a small versioned JSON envelope. Dossier export writes a readable
 
 Duplicate starting Skills advance from Known through Trained (+10), Experienced (+20), and Veteran (+30). Extra copies of a non-stackable starting Talent are reported as +100 XP per duplicate, following the Core Rulebook's regiment/character creation guidance.
 
-The Guardsman Character Creator loads an `.owreg.json` regiment, accepts manually rolled base Characteristics, applies shared and individual modifiers, resolves regiment and Speciality choices, and calculates Wounds, Fate Points, Characteristic Bonuses, and Movement. It combines Skills, Talents, Aptitudes, rules, and equipment into one live summary and saves versioned `.owchar.json` character files. Dice remain physical or Discord rolls. Starting XP purchases and printable character-sheet PDF export are deliberately deferred.
+The Guardsman Character Creator loads an `.owreg.json` regiment, accepts manually rolled base Characteristics, applies shared and individual modifiers, resolves regiment and Speciality choices, and calculates Wounds, Fate Points, Characteristic Bonuses, and Movement. It combines Skills, Talents, Aptitudes, rules, and equipment into one live summary and saves versioned `.owchar.json` character files. Dice remain physical or Discord rolls.
+
+The development v0.4 slice adds an ordered starting-XP ledger. It calculates Characteristic, Skill, and Talent costs from matching Aptitudes; enforces sequential Characteristic and Skill ranks; checks Talent prerequisites; prevents overspending; and recalculates later purchases when an earlier one is removed. Character saves preserve the ledger and remain backward-compatible with v0.3 files. All nine Characteristics and the Core Skill categories used by this project are available. Talents are deliberately limited to the five Guardsman Specialities' Core recommended advances plus the Weapon Training groups needed to test their prerequisite chains. This is not yet a complete Core Talent browser.
+
+The character workflow is responsive down to a 960x650 minimum window. Advancement actions remain inside their cards, horizontal stage scrolling is disabled, and the live-summary column automatically hides below 1100 pixels so the active form keeps usable space.
+
+The Review stage can export an original two-page A4 field dossier as one printable PDF plus two 2480x3508 (300-DPI) PNG pages. Page 1 is the table-ready character record; page 2 contains rules, resolved choices, source references, advances, and campaign notes. The PDF is image-based, so its text is not selectable. Open it in a PDF viewer and print at 100% scale on A4 paper.
 
 ## Acceptance example
 

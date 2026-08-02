@@ -32,6 +32,11 @@ func calculate(state: CharacterState, regiment_repository: RegimentDataRepositor
 		"xp_spent": 0,
 		"xp_remaining": int(character_repository.data.get("starting_xp", 600)),
 		"bonus_xp": 0,
+		"advancement_ready": false,
+		"advancement_options": [],
+		"purchased_advances": [],
+		"invalid_advances": [],
+		"advancement_wounds_bonus": 0,
 		"regiment_choices": [],
 		"speciality_choices": [],
 		"resolved_choices": [],
@@ -65,7 +70,11 @@ func calculate(state: CharacterState, regiment_repository: RegimentDataRepositor
 		_process_choices(speciality_choices, state.speciality_resolutions, "speciality", unique_groups, result, regiment_repository, character_repository)
 
 	_process_duplicate_aptitudes(state, result, unique_groups, regiment_repository, character_repository)
+	_add_grants(result["aptitudes"] as Dictionary, "General", 1)
 	_calculate_characteristics(state, result)
+	_calculate_duplicate_talent_compensation(result, regiment_repository, character_repository)
+	CharacterAdvancementCalculator.new().apply(state, result, character_repository)
+	_add_advancement_sources(result, character_repository)
 	_calculate_derived_values(state, speciality, result)
 	_finalize_aggregates(result, regiment_repository, character_repository)
 	result.erase("_source_keys")
@@ -237,7 +246,7 @@ func _calculate_derived_values(state: CharacterState, speciality: Dictionary, re
 		if state.wounds_roll < 1 or state.wounds_roll > 5:
 			(result["errors"] as Array).append("Enter the physical 1d5 Wounds roll (1-5).")
 		else:
-			result["wounds"] = int(speciality.get("wounds_base", 0)) + state.wounds_roll + int(result["wounds_modifier"])
+			result["wounds"] = int(speciality.get("wounds_base", 0)) + state.wounds_roll + int(result["wounds_modifier"]) + int(result.get("advancement_wounds_bonus", 0))
 	if state.fate_roll < 1 or state.fate_roll > 10:
 		(result["errors"] as Array).append("Enter the physical 1d10 Fate roll (1-10).")
 	elif state.fate_roll <= 7:
@@ -281,16 +290,12 @@ func _finalize_aggregates(result: Dictionary, regiment_repository: RegimentDataR
 	for talent_id: Variant in (result["talents"] as Dictionary):
 		var grants := int(result["talents"][talent_id])
 		var catalog := _catalog_entry("talents", str(talent_id), regiment_repository, character_repository)
-		var stackable := bool(catalog.get("stackable", false))
-		if not stackable and grants > 1:
-			result["bonus_xp"] = int(result["bonus_xp"]) + ((grants - 1) * 100)
+		var stackable := bool(catalog.get("stackable", false)) or bool(catalog.get("repeatable", false))
 		talent_output.append({ "id": str(talent_id), "name": _catalog_name("talents", str(talent_id), regiment_repository, character_repository), "grants": grants, "count": grants if stackable else 1, "stackable": stackable })
 	talent_output.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a["name"]) < str(b["name"]))
 	result["talents"] = talent_output
-	result["xp_budget"] = int(result["xp_budget"]) + int(result["bonus_xp"])
 	result["xp_remaining"] = int(result["xp_budget"]) - int(result["xp_spent"])
 
-	_add_grants(result["aptitudes"] as Dictionary, "General", 1)
 	var aptitude_output: Array[String] = []
 	for aptitude: Variant in (result["aptitudes"] as Dictionary):
 		aptitude_output.append(str(aptitude))
@@ -302,6 +307,25 @@ func _finalize_aggregates(result: Dictionary, regiment_repository: RegimentDataR
 		equipment_output.append(result["equipment"][equipment_key] as Dictionary)
 	equipment_output.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return str(a["name"]) < str(b["name"]))
 	result["equipment"] = equipment_output
+
+
+func _calculate_duplicate_talent_compensation(result: Dictionary, regiment_repository: RegimentDataRepository, character_repository: CharacterDataRepository) -> void:
+	for talent_id: Variant in (result["talents"] as Dictionary):
+		var grants := int(result["talents"][talent_id])
+		var catalog := _catalog_entry("talents", str(talent_id), regiment_repository, character_repository)
+		var stackable := bool(catalog.get("stackable", false)) or bool(catalog.get("repeatable", false))
+		if not stackable and grants > 1:
+			result["bonus_xp"] = int(result["bonus_xp"]) + ((grants - 1) * 100)
+	result["xp_budget"] = int(result["xp_budget"]) + int(result["bonus_xp"])
+	result["xp_remaining"] = int(result["xp_budget"])
+
+
+func _add_advancement_sources(result: Dictionary, character_repository: CharacterDataRepository) -> void:
+	for purchase: Dictionary in result.get("purchased_advances", []):
+		if not bool(purchase.get("valid", false)):
+			continue
+		var source := purchase.get("source", {}) as Dictionary
+		_add_source(source, result, character_repository.get_source_label(source))
 
 
 func _add_equipment(target: Dictionary, entry: Dictionary, regiment_repository: RegimentDataRepository, character_repository: CharacterDataRepository) -> void:

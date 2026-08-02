@@ -5,7 +5,7 @@ extends RefCounted
 
 signal changed
 
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 const CHARACTERISTIC_ORDER: Array[String] = [
 	"Weapon Skill",
 	"Ballistic Skill",
@@ -29,6 +29,7 @@ var regiment_resolutions: Dictionary = {}
 var speciality_resolutions: Dictionary = {}
 var wounds_roll: int = 0
 var fate_roll: int = 0
+var purchased_advances: Array[String] = []
 
 
 func set_character_name(value: String) -> void:
@@ -92,6 +93,28 @@ func set_fate_roll(value: int) -> void:
 	changed.emit()
 
 
+func purchase_advance(advance_id: String) -> void:
+	var clean_id := advance_id.strip_edges()
+	if clean_id.is_empty():
+		return
+	purchased_advances.append(clean_id)
+	changed.emit()
+
+
+func remove_advance_at(index: int) -> void:
+	if index < 0 or index >= purchased_advances.size():
+		return
+	purchased_advances.remove_at(index)
+	changed.emit()
+
+
+func clear_advances() -> void:
+	if purchased_advances.is_empty():
+		return
+	purchased_advances.clear()
+	changed.emit()
+
+
 func set_choice(scope: String, choice_id: String, option_id: String, enabled: bool = true, maximum: int = 1) -> void:
 	var collection := regiment_resolutions if scope == "regiment" else speciality_resolutions
 	var current := get_choice(scope, choice_id)
@@ -136,12 +159,14 @@ func to_dict() -> Dictionary:
 		"regiment_resolutions": regiment_resolutions.duplicate(true),
 		"speciality_resolutions": speciality_resolutions.duplicate(true),
 		"wounds_roll": wounds_roll,
-		"fate_roll": fate_roll
+		"fate_roll": fate_roll,
+		"purchased_advances": purchased_advances.duplicate()
 	}
 
 
 func from_dict(value: Dictionary) -> Error:
-	if int(value.get("version", 0)) != SAVE_VERSION:
+	var version := int(value.get("version", 0))
+	if version not in [1, SAVE_VERSION]:
 		return ERR_INVALID_DATA
 	for field_name in ["regiment", "base_characteristics", "manual_adjustments", "regiment_resolutions", "speciality_resolutions"]:
 		if not value.get(field_name, {}) is Dictionary:
@@ -160,6 +185,14 @@ func from_dict(value: Dictionary) -> Error:
 	speciality_resolutions = _clean_resolution_dictionary(value.get("speciality_resolutions", {}) as Dictionary)
 	wounds_roll = int(value.get("wounds_roll", 0))
 	fate_roll = int(value.get("fate_roll", 0))
+	purchased_advances.clear()
+	if version >= 2:
+		if not value.get("purchased_advances", []) is Array:
+			return ERR_INVALID_DATA
+		for advance_id: Variant in value.get("purchased_advances", []):
+			var clean_id := str(advance_id).strip_edges()
+			if not clean_id.is_empty():
+				purchased_advances.append(clean_id)
 	changed.emit()
 	return OK
 

@@ -4,7 +4,7 @@ extends RefCounted
 ## Versioned JSON persistence for individual OWCA characters.
 
 const FILE_FORMAT := "owca_character"
-const FILE_VERSION := 1
+const FILE_VERSION := 2
 
 
 func save_character(path: String, state: CharacterState, calculation: Dictionary, character_repository: CharacterDataRepository) -> Dictionary:
@@ -13,6 +13,7 @@ func save_character(path: String, state: CharacterState, calculation: Dictionary
 		"version": FILE_VERSION,
 		"saved_at_utc": Time.get_datetime_string_from_system(true),
 		"character_rules_content_version": str(character_repository.data.get("content_version", "unknown")),
+		"advancement_rules_content_version": str(character_repository.advancement_data.get("content_version", "unknown")),
 		"character": state.to_dict(),
 		"calculated_preview": _build_preview(calculation)
 	}
@@ -34,7 +35,7 @@ func load_character(path: String, state: CharacterState) -> Dictionary:
 	if not parser.data is Dictionary:
 		return { "error": ERR_INVALID_DATA, "message": "Character save must contain a JSON object." }
 	var envelope := parser.data as Dictionary
-	if str(envelope.get("format", "")) != FILE_FORMAT or int(envelope.get("version", 0)) != FILE_VERSION:
+	if str(envelope.get("format", "")) != FILE_FORMAT or int(envelope.get("version", 0)) not in [1, FILE_VERSION]:
 		return { "error": ERR_INVALID_DATA, "message": "Unsupported character save format or version." }
 	if not envelope.get("character", {}) is Dictionary:
 		return { "error": ERR_INVALID_DATA, "message": "Character save has no state object." }
@@ -53,5 +54,6 @@ func _build_preview(calculation: Dictionary) -> Dictionary:
 		"characteristics": (calculation.get("characteristics", {}) as Dictionary).duplicate(true),
 		"wounds": int(calculation.get("wounds", 0)),
 		"fate_points": int(calculation.get("fate_points", 0)),
+		"xp_spent": int(calculation.get("xp_spent", 0)),
 		"xp_remaining": int(calculation.get("xp_remaining", 0))
 	}
