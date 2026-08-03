@@ -2,6 +2,7 @@ class_name RegimentDataRepository
 extends RefCounted
 
 ## Loads regiment rules and provides stable-ID lookups to the rest of the app.
+## It validates catalog structure but never applies selection mechanics.
 
 const DEFAULT_DATA_PATH := "res://OWCA/data/regiment_options.json"
 
@@ -11,6 +12,7 @@ var _options_by_id: Dictionary = {}
 var _choices_by_id: Dictionary = {}
 
 
+## Parses and validates a complete catalog before exposing any indexed options.
 func load_data(path: String = DEFAULT_DATA_PATH) -> Error:
 	last_error = ""
 	_options_by_id.clear()

@@ -34,12 +34,16 @@ var character_repository := CharacterDataRepository.new()
 var regiment_persistence := RegimentPersistence.new()
 var character_persistence := CharacterPersistence.new()
 var sheet_exporter := CharacterSheetExporter.new()
+var creation_roller := CharacterCreationRoller.new()
 var calculator := CharacterCalculator.new()
 var state := CharacterState.new()
 var calculation: Dictionary = {}
+## Transient evidence for values rolled inside OWCA. Manual edits clear the
+## matching entry, and these strings are intentionally absent from save files.
+var creation_roll_details: Dictionary = {}
 var active_stage: String = "regiment"
 var advancement_filter: String = "characteristic"
-var action_message: String = "Load a saved regiment to begin. Dice are entered from physical or Discord rolls."
+var action_message: String = "Load a saved regiment to begin. Use physical or Discord dice, or OWCA's optional creation rolls."
 
 var name_edit: LineEdit
 var player_edit: LineEdit
@@ -60,6 +64,8 @@ var regiment_load_dialog: FileDialog
 var character_save_dialog: FileDialog
 var character_load_dialog: FileDialog
 var character_export_dialog: FileDialog
+var roll_overwrite_dialog: ConfirmationDialog
+var pending_roll_action: Callable
 
 
 func _ready() -> void:
@@ -177,7 +183,7 @@ func _build_workspace() -> Control:
 	navigation_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	navigation.add_child(navigation_spacer)
 	var scope_note := Label.new()
-	scope_note.text = "Testing scope:\n5 Core Guardsman Specialities\n600 XP advancement stage\nCurated Core Talent list\nA4 PDF + PNG dossier export\nNo digital dice rolling"
+	scope_note.text = "Testing scope:\n5 Core Guardsman Specialities\n600 XP advancement stage\nCurated Core Talent list\nA4 PDF + PNG dossier export\nCreation dice helpers only\nNo gameplay dice rolling"
 	scope_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	scope_note.add_theme_font_size_override("font_size", 11)
 	scope_note.add_theme_color_override("font_color", COLOUR_MUTED)
@@ -263,7 +269,7 @@ func _build_status_panel() -> Control:
 	xp_label.add_theme_font_size_override("font_size", 15)
 	metrics.add_child(xp_label)
 	var dice_note := Label.new()
-	dice_note.text = "ROLLS ENTERED MANUALLY"
+	dice_note.text = "CREATION ROLLS OPTIONAL"
 	dice_note.add_theme_font_size_override("font_size", 10)
 	dice_note.add_theme_color_override("font_color", COLOUR_MUTED)
 	metrics.add_child(dice_note)
@@ -308,6 +314,15 @@ func _build_dialogs() -> void:
 	character_export_dialog.filters = PackedStringArray(["*.pdf ; A4 PDF document"])
 	character_export_dialog.file_selected.connect(_export_character_sheet_to_path)
 	add_child(character_export_dialog)
+
+	roll_overwrite_dialog = ConfirmationDialog.new()
+	roll_overwrite_dialog.title = "Replace Existing Creation Roll?"
+	roll_overwrite_dialog.ok_button_text = "ROLL AND REPLACE"
+	roll_overwrite_dialog.cancel_button_text = "KEEP CURRENT VALUE"
+	roll_overwrite_dialog.confirmed.connect(_on_roll_overwrite_confirmed)
+	roll_overwrite_dialog.canceled.connect(_clear_pending_roll_action)
+	roll_overwrite_dialog.close_requested.connect(_clear_pending_roll_action)
+	add_child(roll_overwrite_dialog)
 
 
 func _refresh(rebuild_stage: bool = true) -> void:
@@ -392,13 +407,22 @@ func _render_regiment_stage() -> void:
 
 
 func _render_characteristics_stage() -> void:
-	stage_content.add_child(_wrapped_label("Enter results rolled with physical dice or Discord. Base 2d10+20 results are normally 22-40; OWCA applies all later modifiers.", COLOUR_MUTED))
+	stage_content.add_child(_wrapped_label("Enter physical or Discord results, or let OWCA roll creation dice. Each base Characteristic uses 2d10 + 20 and remains manually editable; OWCA applies regiment, Speciality, advancement, and manual modifiers afterward.", COLOUR_MUTED))
+	var roll_actions := HBoxContainer.new()
+	roll_actions.add_theme_constant_override("separation", 8)
+	stage_content.add_child(roll_actions)
+	var roll_all := _make_action_button("ROLL ALL CHARACTERISTICS", _request_roll_all_characteristics)
+	roll_all.custom_minimum_size.y = 42
+	roll_actions.add_child(roll_all)
+	var roll_note := _wrapped_label("Existing values require confirmation before replacement.", COLOUR_MUTED)
+	roll_note.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	roll_actions.add_child(roll_note)
 	var grid := GridContainer.new()
 	grid.columns = 7
 	grid.add_theme_constant_override("h_separation", 7)
 	grid.add_theme_constant_override("v_separation", 5)
 	stage_content.add_child(grid)
-	for heading_text in ["CHARACTERISTIC", "BASE", "REG.", "SPEC.", "MANUAL", "FINAL", "BONUS"]:
+	for heading_text in ["CHARACTERISTIC", "BASE / ROLL", "REG.", "SPEC.", "MANUAL", "FINAL", "BONUS"]:
 		var heading := Label.new()
 		heading.text = heading_text
 		heading.add_theme_font_size_override("font_size", 10)
@@ -409,6 +433,12 @@ func _render_characteristics_stage() -> void:
 		label.text = "%s (%s)" % [characteristic, ABBREVIATIONS[characteristic]]
 		label.custom_minimum_size.x = 135
 		grid.add_child(label)
+		var base_cell := VBoxContainer.new()
+		base_cell.add_theme_constant_override("separation", 2)
+		grid.add_child(base_cell)
+		var base_controls := HBoxContainer.new()
+		base_controls.add_theme_constant_override("separation", 4)
+		base_cell.add_child(base_controls)
 		var base_spin := SpinBox.new()
 		base_spin.min_value = 0
 		base_spin.max_value = 100
@@ -416,7 +446,18 @@ func _render_characteristics_stage() -> void:
 		base_spin.custom_minimum_size.x = 58
 		base_spin.value = int(state.base_characteristics.get(characteristic, 0))
 		base_spin.value_changed.connect(_on_base_characteristic_changed.bind(characteristic))
-		grid.add_child(base_spin)
+		base_controls.add_child(base_spin)
+		var roll_one := Button.new()
+		roll_one.text = "ROLL"
+		roll_one.custom_minimum_size.x = 45
+		roll_one.tooltip_text = "Roll 2d10 + 20 for %s." % characteristic
+		roll_one.pressed.connect(_request_characteristic_roll.bind(characteristic))
+		base_controls.add_child(roll_one)
+		var roll_detail := Label.new()
+		roll_detail.text = str(creation_roll_details.get(characteristic, ""))
+		roll_detail.add_theme_font_size_override("font_size", 9)
+		roll_detail.add_theme_color_override("font_color", COLOUR_MUTED)
+		base_cell.add_child(roll_detail)
 		var regiment_value := Label.new()
 		regiment_value.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		grid.add_child(regiment_value)
@@ -557,9 +598,12 @@ func _build_choice_card(choice: Dictionary) -> Control:
 
 
 func _render_derived_stage() -> void:
-	stage_content.add_child(_wrapped_label("Roll these dice outside OWCA, then enter the results. OWCA performs only the lookup and arithmetic.", COLOUR_MUTED))
+	stage_content.add_child(_wrapped_label("Enter physical or Discord results, or use these optional creation-roll buttons. OWCA rolls only the Wounds and Fate inputs, then performs the normal lookup and arithmetic.", COLOUR_MUTED))
+	var roll_both := _make_action_button("ROLL WOUNDS + FATE", _request_wounds_and_fate_roll)
+	roll_both.custom_minimum_size.y = 42
+	stage_content.add_child(roll_both)
 	var form := GridContainer.new()
-	form.columns = 3
+	form.columns = 4
 	form.add_theme_constant_override("h_separation", 12)
 	form.add_theme_constant_override("v_separation", 8)
 	stage_content.add_child(form)
@@ -569,6 +613,11 @@ func _render_derived_stage() -> void:
 	roll_heading.add_theme_font_size_override("font_size", 10)
 	roll_heading.add_theme_color_override("font_color", COLOUR_GOLD)
 	form.add_child(roll_heading)
+	var action_heading := Label.new()
+	action_heading.text = "OWCA ROLL"
+	action_heading.add_theme_font_size_override("font_size", 10)
+	action_heading.add_theme_color_override("font_color", COLOUR_GOLD)
+	form.add_child(action_heading)
 	var range_heading := Label.new()
 	range_heading.text = "VALID RANGE"
 	range_heading.add_theme_font_size_override("font_size", 10)
@@ -584,7 +633,10 @@ func _render_derived_stage() -> void:
 	wounds_spin.value = state.wounds_roll
 	wounds_spin.value_changed.connect(_on_wounds_roll_changed)
 	form.add_child(wounds_spin)
-	form.add_child(_notice_label("1d5: 1-5", COLOUR_MUTED))
+	var wounds_roll_button := _make_action_button("ROLL 1D5", _request_wounds_roll)
+	wounds_roll_button.custom_minimum_size.y = 34
+	form.add_child(wounds_roll_button)
+	form.add_child(_notice_label("1d5: 1-5%s" % _roll_detail_suffix("wounds"), COLOUR_MUTED))
 	var fate_label := Label.new()
 	fate_label.text = "Fate die"
 	form.add_child(fate_label)
@@ -595,7 +647,10 @@ func _render_derived_stage() -> void:
 	fate_spin.value = state.fate_roll
 	fate_spin.value_changed.connect(_on_fate_roll_changed)
 	form.add_child(fate_spin)
-	form.add_child(_notice_label("1d10: 1-10", COLOUR_MUTED))
+	var fate_roll_button := _make_action_button("ROLL 1D10", _request_fate_roll)
+	fate_roll_button.custom_minimum_size.y = 34
+	form.add_child(fate_roll_button)
+	form.add_child(_notice_label("1d10: 1-10%s" % _roll_detail_suffix("fate"), COLOUR_MUTED))
 	derived_output = RichTextLabel.new()
 	derived_output.bbcode_enabled = true
 	derived_output.fit_content = true
@@ -889,7 +944,120 @@ func _on_player_committed() -> void:
 	_refresh(false)
 
 
+## Requests a complete set of nine base rolls. Existing or partially entered
+## values are never replaced until the user accepts the confirmation dialog.
+func _request_roll_all_characteristics() -> void:
+	_request_creation_roll(
+		not state.base_characteristics.is_empty(),
+		"This will replace every entered base Characteristic with a new 2d10 + 20 roll.",
+		_roll_all_characteristics
+	)
+
+
+func _request_characteristic_roll(characteristic: String) -> void:
+	_request_creation_roll(
+		state.base_characteristics.has(characteristic),
+		"This will replace the entered %s base value with a new 2d10 + 20 roll." % characteristic,
+		_roll_characteristic.bind(characteristic)
+	)
+
+
+func _request_wounds_roll() -> void:
+	_request_creation_roll(
+		state.wounds_roll > 0,
+		"This will replace the entered Wounds die with a new 1d5 roll.",
+		_roll_wounds
+	)
+
+
+func _request_fate_roll() -> void:
+	_request_creation_roll(
+		state.fate_roll > 0,
+		"This will replace the entered Fate die with a new 1d10 roll.",
+		_roll_fate
+	)
+
+
+func _request_wounds_and_fate_roll() -> void:
+	_request_creation_roll(
+		state.wounds_roll > 0 or state.fate_roll > 0,
+		"This will replace both entered creation dice with new Wounds (1d5) and Fate (1d10) rolls.",
+		_roll_wounds_and_fate
+	)
+
+
+## Runs immediately for an empty field or stores a pending Callable while the
+## shared overwrite dialog is visible. Keeping this policy in one helper makes
+## every automated creation roll follow the same safety rule.
+func _request_creation_roll(overwrites_existing: bool, warning: String, action: Callable) -> void:
+	if not overwrites_existing:
+		action.call()
+		return
+	pending_roll_action = action
+	roll_overwrite_dialog.dialog_text = warning
+	roll_overwrite_dialog.popup_centered(Vector2i(560, 190))
+
+
+func _on_roll_overwrite_confirmed() -> void:
+	var accepted_action := pending_roll_action
+	pending_roll_action = Callable()
+	if accepted_action.is_valid():
+		accepted_action.call()
+
+
+func _clear_pending_roll_action() -> void:
+	pending_roll_action = Callable()
+
+
+func _roll_all_characteristics() -> void:
+	var results := creation_roller.roll_all_characteristics()
+	var summaries: Array[String] = []
+	for characteristic in CharacterState.CHARACTERISTIC_ORDER:
+		var result := results[characteristic] as Dictionary
+		state.base_characteristics[characteristic] = int(result["total"])
+		creation_roll_details[characteristic] = creation_roller.describe(result)
+		summaries.append("%s %d" % [ABBREVIATIONS[characteristic], int(result["total"])])
+	action_message = "Rolled all base Characteristics: %s." % ", ".join(summaries)
+	_refresh()
+
+
+func _roll_characteristic(characteristic: String) -> void:
+	var result := creation_roller.roll_characteristic()
+	state.base_characteristics[characteristic] = int(result["total"])
+	creation_roll_details[characteristic] = creation_roller.describe(result)
+	action_message = "%s rolled %s." % [characteristic, creation_roll_details[characteristic]]
+	_refresh()
+
+
+func _roll_wounds() -> void:
+	var result := creation_roller.roll_wounds()
+	state.wounds_roll = int(result["total"])
+	creation_roll_details["wounds"] = creation_roller.describe(result)
+	action_message = "Wounds die rolled %s." % creation_roll_details["wounds"]
+	_refresh()
+
+
+func _roll_fate() -> void:
+	var result := creation_roller.roll_fate()
+	state.fate_roll = int(result["total"])
+	creation_roll_details["fate"] = creation_roller.describe(result)
+	action_message = "Fate die rolled %s." % creation_roll_details["fate"]
+	_refresh()
+
+
+func _roll_wounds_and_fate() -> void:
+	var wounds_result := creation_roller.roll_wounds()
+	var fate_result := creation_roller.roll_fate()
+	state.wounds_roll = int(wounds_result["total"])
+	state.fate_roll = int(fate_result["total"])
+	creation_roll_details["wounds"] = creation_roller.describe(wounds_result)
+	creation_roll_details["fate"] = creation_roller.describe(fate_result)
+	action_message = "Creation dice rolled: Wounds %s; Fate %s." % [creation_roll_details["wounds"], creation_roll_details["fate"]]
+	_refresh()
+
+
 func _on_base_characteristic_changed(value: float, characteristic: String) -> void:
+	creation_roll_details.erase(characteristic)
 	if int(value) <= 0:
 		state.base_characteristics.erase(characteristic)
 	else:
@@ -928,11 +1096,13 @@ func _on_multiple_choice_toggled(selected: bool, scope: String, choice_id: Strin
 
 
 func _on_wounds_roll_changed(value: float) -> void:
+	creation_roll_details.erase("wounds")
 	state.wounds_roll = int(value)
 	_refresh(false)
 
 
 func _on_fate_roll_changed(value: float) -> void:
+	creation_roll_details.erase("fate")
 	state.fate_roll = int(value)
 	_refresh(false)
 
@@ -1001,6 +1171,7 @@ func _load_character_from_path(path: String) -> void:
 	var result := character_persistence.load_character(path, state)
 	action_message = str(result.get("message", ""))
 	if int(result.get("error", ERR_INVALID_DATA)) == OK:
+		creation_roll_details.clear()
 		active_stage = "review"
 		(stage_buttons[active_stage] as Button).button_pressed = true
 	_refresh()
@@ -1051,6 +1222,11 @@ func _wrapped_label(value: String, colour: Color) -> Label:
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_color_override("font_color", colour)
 	return label
+
+
+func _roll_detail_suffix(key: String) -> String:
+	var detail := str(creation_roll_details.get(key, ""))
+	return "\nLast OWCA roll: %s" % detail if not detail.is_empty() else ""
 
 
 func _notice_label(value: String, colour: Color) -> Label:

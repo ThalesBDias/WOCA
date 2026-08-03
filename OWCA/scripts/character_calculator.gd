@@ -2,6 +2,9 @@ class_name CharacterCalculator
 extends RefCounted
 
 ## Pure character-creation engine for the Core Guardsman testing slice.
+##
+## The calculator has no scene-tree, file, clock, or random dependencies. Given
+## identical state and repositories, it must return an identical result.
 
 const CHARACTERISTIC_APTITUDES: Array[String] = [
 	"Weapon Skill", "Ballistic Skill", "Strength", "Toughness", "Agility",
@@ -9,6 +12,9 @@ const CHARACTERISTIC_APTITUDES: Array[String] = [
 ]
 
 
+## Builds the complete UI/export contract from saved inputs and current rules.
+## Callers must treat the returned Dictionary as derived data and recalculate it
+## after every state change rather than editing result fields in place.
 func calculate(state: CharacterState, regiment_repository: RegimentDataRepository, character_repository: CharacterDataRepository) -> Dictionary:
 	var result := {
 		"valid": false,

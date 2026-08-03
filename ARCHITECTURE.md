@@ -1,0 +1,134 @@
+# OWCA architecture
+
+This document explains how the Only War Character Assistant is divided, why those boundaries exist, and where new code belongs. It is intended for contributors who have not followed the project's development history.
+
+## Design goals
+
+OWCA is a data-driven creation assistant rather than a digital game table. Its responsibilities are to:
+
+- collect regiment and character-creation inputs;
+- validate combinations and unresolved choices;
+- apply concise mechanical effects deterministically;
+- calculate derived values and XP costs;
+- save editable, versioned JSON files; and
+- produce readable summaries for physical tabletop play.
+
+Combat resolution, attack rolls, damage rolls, automated ammunition consumption, vehicles, and campaign simulation remain outside the current scope. Creation dice are allowed because they produce inputs to the builder; they do not resolve play at the table.
+
+## Layered structure
+
+OWCA uses five layers. Dependencies should move down this list, never upward.
+
+### 1. Rules data
+
+Files under `OWCA/data/` contain catalogs, costs, prerequisites, concise effect summaries, and source references. Stable snake-case IDs are saved; display names may change without invalidating saves.
+
+Rules data must not depend on UI node names. Long copyrighted text is deliberately excluded.
+
+### 2. Repositories
+
+`RegimentDataRepository` and `CharacterDataRepository` load JSON, perform structural checks, expose lookup methods, and format source labels. A repository answers questions about the catalog; it does not hold a player's selections.
+
+### 3. State and services
+
+State objects contain user-authored inputs:
+
+- `RegimentState` stores option IDs and resolved regiment-level choices.
+- `CharacterState` stores the loaded regiment snapshot, rolled base values, manual adjustments, individual choices, and the ordered XP-purchase ledger.
+
+State must remain serializable. Calculated Characteristics, final Skills, final equipment, and XP totals do not belong in state because they can be reproduced from inputs and current rules data.
+
+Small services own operations that are neither state nor rules aggregation:
+
+- persistence services read and write versioned JSON envelopes;
+- `CharacterCreationRoller` generates optional character-creation dice;
+- exporters transform a completed calculation into text, PNG, or PDF output;
+- `MusicManager` owns persistent soundtrack playback.
+
+Randomness is isolated in `CharacterCreationRoller`. The service accepts an injected seeded random-number generator so tests remain deterministic. Roll breakdowns are transient UI evidence; only the resulting input is stored in `CharacterState`.
+
+### 4. Calculators
+
+Calculators are deterministic engines. Given the same state and rules data, they must return the same result without reading UI nodes, files, clocks, or random generators.
+
+`RegimentCalculator` validates the 12-point build and aggregates regiment effects.
+
+`CharacterCalculator` performs the character pipeline:
+
+1. validate and apply the loaded regiment snapshot;
+2. apply the selected Speciality;
+3. resolve regiment and Speciality choices;
+4. resolve duplicate Aptitudes and starting Talent compensation;
+5. calculate Characteristics;
+6. replay ordered XP purchases through `CharacterAdvancementCalculator`;
+7. calculate Wounds, Fate, Characteristic Bonuses, and Movement; and
+8. normalize Skills, Talents, equipment, sources, errors, and warnings for consumers.
+
+`CharacterAdvancementCalculator` replays purchases in order because a purchase can change the cost or legality of every later purchase. Removing an earlier purchase intentionally causes later entries to be recalculated.
+
+Calculators return dictionaries because their results combine several heterogeneous catalogs. Result keys form an internal contract used by the UI and exporters; changes therefore require regression tests.
+
+### 5. UI scenes and controllers
+
+Scenes provide layout roots. Their GDScript controllers construct most widgets programmatically and translate user actions into state changes.
+
+The UI may:
+
+- read repositories and calculated results;
+- update state inputs;
+- call focused services; and
+- display errors, warnings, roll details, or export messages.
+
+The UI must not reproduce rules calculations. If two screens need the same mechanical result, that result belongs in a calculator or service.
+
+## Data flow
+
+```text
+JSON rules -> Repository -----> Calculator -> Result -> UI / Exporter
+                    \             ^
+User input ----------> State -----|
+Creation roller ------> UI ------> State
+```
+
+The roller returns a transparent record to the UI. The UI shows the dice and writes the total to state. The calculator sees only the resulting input, exactly as it would for a physical or Discord roll.
+
+## Save-file policy
+
+Regiment and character files use a versioned envelope plus a versioned state object. When changing saved fields:
+
+1. increase the relevant state or file version;
+2. keep backward loading support when practical;
+3. validate container types before casting;
+4. provide defaults for fields absent from older versions; and
+5. add a round-trip and backward-compatibility test.
+
+Calculated previews in saves are informational. They are never trusted as authoritative when loading.
+
+## Source and copyright policy
+
+Mechanical numbers, concise original summaries, stable IDs, and book/page references are acceptable project data. Do not add rulebook PDFs, copied paragraphs, artwork, logos, or other third-party assets without explicit authorization.
+
+Project-owner-created assets should include a short provenance note, as demonstrated by `OWCA/audio/README.md`.
+
+## Testing boundaries
+
+Tests under `OWCA/tests/` are executable documentation:
+
+- calculator tests cover deterministic rules aggregation and edge cases;
+- persistence tests cover versioning and round trips;
+- UI tests protect discoverability and responsive layout;
+- creation-roll tests inject a seeded generator and verify ranges and structure;
+- visual PDF tests require a real renderer and inspect generated A4 output.
+
+Every bug fix should add a test that fails before the fix. Every new rules-data shape should include at least one accepted and one rejected example.
+
+## Planned equipment architecture
+
+Future weapon work should distinguish catalog definitions from owned instances:
+
+- a weapon definition contains immutable base statistics;
+- an owned weapon instance has a unique ID, craftsmanship, modifications, and notes;
+- temporary ammunition belongs to session/loadout state rather than the immutable definition; and
+- modified statistics are calculated through a documented pipeline rather than written back into base data.
+
+This separation will let two weapons of the same type carry different modifications without duplicating catalog rules.

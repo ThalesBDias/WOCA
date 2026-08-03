@@ -1,11 +1,20 @@
 class_name CharacterState
 extends RefCounted
 
-## Serializable inputs for one character. Calculated values remain in CharacterCalculator.
+## Serializable inputs for one character.
+##
+## This object is deliberately limited to facts the player selected, entered,
+## or purchased. Final Characteristics, Skills, Talents, equipment, Wounds,
+## Fate, and XP totals are reproducible calculator output and must not become
+## authoritative saved state.
 
+## Emitted after a public mutator changes state. Current UI controllers often
+## refresh explicitly, but the signal keeps the state reusable by future UIs.
 signal changed
 
+## State schema version nested inside the versioned character-file envelope.
 const SAVE_VERSION := 2
+## Canonical order shared by entry forms, calculations, exports, and tests.
 const CHARACTERISTIC_ORDER: Array[String] = [
 	"Weapon Skill",
 	"Ballistic Skill",
@@ -23,12 +32,16 @@ var player_name: String = ""
 var regiment: Dictionary = {}
 var regiment_rules_content_version: String = ""
 var speciality_id: String = ""
+## Raw 2d10 + 20 inputs, whether rolled by OWCA, physical dice, or Discord.
 var base_characteristics: Dictionary = {}
+## Explicit GM/player adjustments applied after regiment and Speciality effects.
 var manual_adjustments: Dictionary = {}
 var regiment_resolutions: Dictionary = {}
 var speciality_resolutions: Dictionary = {}
+## Raw creation dice. Zero means not entered; valid values are 1-5 and 1-10.
 var wounds_roll: int = 0
 var fate_roll: int = 0
+## Ordered stable advancement IDs. Order affects ranks, costs, and prerequisites.
 var purchased_advances: Array[String] = []
 
 
@@ -146,6 +159,7 @@ func get_choice(scope: String, choice_id: String) -> Array[String]:
 	return output
 
 
+## Returns a deep-enough JSON-safe snapshot of user-authored inputs only.
 func to_dict() -> Dictionary:
 	return {
 		"version": SAVE_VERSION,
@@ -164,6 +178,8 @@ func to_dict() -> Dictionary:
 	}
 
 
+## Loads supported state versions defensively. Unknown keys are ignored, while
+## invalid container types or unsupported versions reject the entire state.
 func from_dict(value: Dictionary) -> Error:
 	var version := int(value.get("version", 0))
 	if version not in [1, SAVE_VERSION]:

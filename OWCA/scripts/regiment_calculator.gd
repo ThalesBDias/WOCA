@@ -2,8 +2,11 @@ class_name RegimentCalculator
 extends RefCounted
 
 ## Pure rules engine: combines selected data and returns a UI/export-ready result.
+## Like CharacterCalculator, it must remain deterministic and independent of UI.
 
 
+## Validates selection counts, compatibility, budget, doctrines, and choices,
+## then aggregates every supported effect into normalized result collections.
 func calculate(state: RegimentState, repository: RegimentDataRepository) -> Dictionary:
 	var result := {
 		"valid": false,

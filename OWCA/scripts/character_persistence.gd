@@ -2,11 +2,16 @@ class_name CharacterPersistence
 extends RefCounted
 
 ## Versioned JSON persistence for individual OWCA characters.
+##
+## The calculated preview is convenient for humans inspecting a save, but load
+## intentionally ignores it and recalculates from the authoritative state.
 
 const FILE_FORMAT := "owca_character"
 const FILE_VERSION := 2
 
 
+## Writes a versioned envelope containing rules versions, authoritative state,
+## and a non-authoritative calculated preview.
 func save_character(path: String, state: CharacterState, calculation: Dictionary, character_repository: CharacterDataRepository) -> Dictionary:
 	var envelope := {
 		"format": FILE_FORMAT,
@@ -24,6 +29,8 @@ func save_character(path: String, state: CharacterState, calculation: Dictionary
 	return { "error": OK, "message": "Saved character to %s." % path }
 
 
+## Loads only supported envelope/state versions into the supplied state object.
+## The caller recalculates against its currently loaded rules repositories.
 func load_character(path: String, state: CharacterState) -> Dictionary:
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:

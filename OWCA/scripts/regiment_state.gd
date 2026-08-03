@@ -1,7 +1,10 @@
 class_name RegimentState
 extends RefCounted
 
-## Serializable mutable state. It contains choices only; derived rules stay in the calculator.
+## Serializable mutable regiment state.
+##
+## It contains option and choice IDs only. Points, combined effects, validity,
+## and deferred per-character benefits remain derived calculator output.
 
 signal changed
 
@@ -24,6 +27,8 @@ func set_regiment_name(value: String) -> void:
 	changed.emit()
 
 
+## Selects or removes one stable option ID while enforcing the category's basic
+## cardinality. Cross-option compatibility remains a calculator responsibility.
 func set_option(category: String, option_id: String, selected: bool, maximum: int) -> void:
 	var current := get_selected_for_category(category)
 	if selected:
