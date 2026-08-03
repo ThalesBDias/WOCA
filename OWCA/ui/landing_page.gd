@@ -97,7 +97,10 @@ func _build_interface() -> void:
 	_on_music_enabled_changed(MusicManager.is_music_enabled())
 
 	var footer := Label.new()
-	footer.text = "OWCA v0.3  |  Rules summaries with source and page references"
+	# Keep the visible release number tied to project.godot so it cannot drift
+	# independently when a new OWCA release is prepared.
+	var app_version := str(ProjectSettings.get_setting("application/config/version", "development"))
+	footer.text = "OWCA v%s  |  Rules summaries with source and page references" % app_version
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 12)
 	footer.add_theme_color_override("font_color", COLOUR_MUTED)

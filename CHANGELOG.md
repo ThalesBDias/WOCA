@@ -40,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - Fixed long advancement names pushing the Buy button outside the visible centre panel and requiring horizontal scrolling.
+- Fixed the landing page and Regiment Creator continuing to display `v0.3` after the application version changed; both now read the version from `project.godot`.
 
 ### Known limitations
 
