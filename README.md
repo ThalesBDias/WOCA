@@ -8,12 +8,14 @@ OWCA is an unofficial, non-commercial fan-made tool. It is not affiliated with, 
 
 This repository does not include rulebook PDFs or reproduce long-form rules text. Users are expected to own the relevant source books. Its rules data is limited to numerical effects, concise summaries, and source/page references for personal tabletop use. The GNU GPL in this repository applies only to original OWCA code and other material the project authors have the right to license; it does not grant rights to third-party intellectual property.
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and patch notes.
+See [CHANGELOG.md](CHANGELOG.md) for version history and patch notes, [ARCHITECTURE.md](ARCHITECTURE.md) for system boundaries and data flow, and [CONTRIBUTING.md](CONTRIBUTING.md) for the commenting, rules-data, save-format, and testing standards used by contributors.
 
 ## Project layout
 
 ```text
 OWCA/
+  audio/
+    war_grinder.mp3           Persistent background soundtrack
   data/
     regiment_options.json       Regiment rules and catalog data
     guardsman_specialities.json Five Core Guardsman starting packages
@@ -34,6 +36,8 @@ OWCA/
     character_calculator.gd     Character aggregation and validation
     character_advancement_calculator.gd Ordered XP ledger and purchase validation
     character_persistence.gd    Character JSON save/load
+    character_creation_roller.gd Optional, testable creation dice
+    music_manager.gd           Persistent looping soundtrack and mute control
     character_sheet_exporter.gd Off-screen A4 page rendering and export orchestration
     pdf_image_writer.gd         Dependency-free image-to-PDF writer
   ui/
@@ -48,6 +52,9 @@ OWCA/
     regiment_calculator_test.gd Headless smoke tests
     character_calculator_test.gd Guardsman package and persistence tests
     character_sheet_export_test.gd Normal-renderer PDF/PNG visual test
+    character_creation_roller_test.gd Deterministic creation-dice tests
+    character_creation_roll_ui_test.gd Roll controls and overwrite-safety tests
+    music_manager_test.gd      Background-music import and control test
 ```
 
 ## Run
@@ -63,6 +70,9 @@ godot --headless --editor --path . --quit
 godot --headless --path . --script res://OWCA/tests/regiment_calculator_test.gd
 godot --headless --path . --script res://OWCA/tests/character_calculator_test.gd
 godot --headless --path . --script res://OWCA/tests/character_ui_layout_test.gd
+godot --headless --path . --script res://OWCA/tests/character_creation_roller_test.gd
+godot --headless --path . --script res://OWCA/tests/character_creation_roll_ui_test.gd
+godot --headless --path . --script res://OWCA/tests/music_manager_test.gd
 ```
 
 The character-sheet visual test needs a real renderer because Godot's Windows headless display driver is a dummy. It runs minimized and writes the example output to the path in `OWCA_PDF_OUTPUT`:
@@ -77,13 +87,17 @@ Save files use a small versioned JSON envelope. Dossier export writes a readable
 
 Duplicate starting Skills advance from Known through Trained (+10), Experienced (+20), and Veteran (+30). Extra copies of a non-stackable starting Talent are reported as +100 XP per duplicate, following the Core Rulebook's regiment/character creation guidance.
 
-The Guardsman Character Creator loads an `.owreg.json` regiment, accepts manually rolled base Characteristics, applies shared and individual modifiers, resolves regiment and Speciality choices, and calculates Wounds, Fate Points, Characteristic Bonuses, and Movement. It combines Skills, Talents, Aptitudes, rules, and equipment into one live summary and saves versioned `.owchar.json` character files. Dice remain physical or Discord rolls.
+The Guardsman Character Creator loads an `.owreg.json` regiment, accepts manually rolled base Characteristics, applies shared and individual modifiers, resolves regiment and Speciality choices, and calculates Wounds, Fate Points, Characteristic Bonuses, and Movement. It combines Skills, Talents, Aptitudes, rules, and equipment into one live summary and saves versioned `.owchar.json` character files. Physical and Discord dice remain fully supported.
+
+Character creation also provides optional rolls for all nine base Characteristics (`2d10 + 20`), Wounds (`1d5`), and Fate (`1d10`). Every result shows its individual dice, remains manually editable, and requires confirmation before replacing an entered value. Manual edits clear the transient OWCA roll breakdown. Gameplay tests, attacks, damage, and ammunition use remain at the table.
 
 The development v0.4 slice adds an ordered starting-XP ledger. It calculates Characteristic, Skill, and Talent costs from matching Aptitudes; enforces sequential Characteristic and Skill ranks; checks Talent prerequisites; prevents overspending; and recalculates later purchases when an earlier one is removed. Character saves preserve the ledger and remain backward-compatible with v0.3 files. All nine Characteristics and the Core Skill categories used by this project are available. Talents are deliberately limited to the five Guardsman Specialities' Core recommended advances plus the Weapon Training groups needed to test their prerequisite chains. This is not yet a complete Core Talent browser.
 
 The character workflow is responsive down to a 960x650 minimum window. Advancement actions remain inside their cards, horizontal stage scrolling is disabled, and the live-summary column automatically hides below 1100 pixels so the active form keeps usable space.
 
 The Review stage can export an original two-page A4 field dossier as one printable PDF plus two 2480x3508 (300-DPI) PNG pages. Page 1 is the table-ready character record; page 2 contains rules, resolved choices, source references, advances, and campaign notes. The PDF is image-based, so its text is not selectable. Open it in a PDF viewer and print at 100% scale on A4 paper.
+
+“War Grinder” plays as OWCA's looping background soundtrack and continues uninterrupted while changing scenes. Use the landing-page music button or press `M` outside a text field to pause or resume it. The default level is deliberately lower than full volume.
 
 ## Acceptance example
 
