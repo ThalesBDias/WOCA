@@ -1,7 +1,11 @@
 class_name CharacterDataRepository
 extends RefCounted
 
-## Loads the first character-creation slice: the five Core Guardsman Specialities.
+## Loads character rules catalogs and provides stable-ID lookups.
+##
+## Repository methods expose data without applying character mechanics. Starting
+## packages and advancement catalogs remain separate files so later complete
+## Talent or equipment catalogs do not inflate Speciality definitions.
 
 const DEFAULT_DATA_PATH := "res://OWCA/data/guardsman_specialities.json"
 const DEFAULT_ADVANCEMENT_PATH := "res://OWCA/data/guardsman_advancements.json"
@@ -13,6 +17,8 @@ var _specialities_by_id: Dictionary = {}
 var _choices_by_id: Dictionary = {}
 
 
+## Replaces every in-memory index only after both JSON documents parse and pass
+## structural validation. `last_error` contains a player/developer-facing cause.
 func load_data(path: String = DEFAULT_DATA_PATH, advancement_path: String = DEFAULT_ADVANCEMENT_PATH) -> Error:
 	last_error = ""
 	_specialities_by_id.clear()

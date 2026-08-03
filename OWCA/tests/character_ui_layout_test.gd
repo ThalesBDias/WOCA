@@ -24,6 +24,16 @@ func _run() -> void:
 		await process_frame
 		_assert_advancement_buttons_fit(creator, test_size)
 
+	creator.call("_select_stage", "characteristics")
+	await process_frame
+	for test_size in [Vector2i(960, 650), Vector2i(1090, 700), Vector2i(1280, 800)]:
+		root.size = test_size
+		await process_frame
+		creator.call("_apply_responsive_layout")
+		creator.call("_render_active_stage")
+		await process_frame
+		_assert_roll_buttons_fit(creator, test_size)
+
 	creator.call("_select_stage", "review")
 	await process_frame
 	var export_button := _find_button(creator.get("stage_content") as Node, "EXPORT A4 PDF + PNG")
@@ -55,6 +65,26 @@ func _collect_buy_buttons(node: Node, output: Array[Button]) -> void:
 		if child is Button and str((child as Button).text).begins_with("BUY FOR"):
 			output.append(child as Button)
 		_collect_buy_buttons(child, output)
+
+
+func _assert_roll_buttons_fit(creator: Control, test_size: Vector2i) -> void:
+	var content_panel := creator.get("content_panel") as Control
+	var stage_content := creator.get("stage_content") as Control
+	var content_rect := content_panel.get_global_rect()
+	var roll_buttons: Array[Button] = []
+	_collect_roll_buttons(stage_content, roll_buttons)
+	_assert_true(roll_buttons.size() == 10, "roll-all and nine individual roll actions render at %s" % test_size)
+	for button in roll_buttons:
+		var button_rect := button.get_global_rect()
+		_assert_true(button_rect.position.x >= content_rect.position.x - 1.0, "roll button begins inside content panel at %s" % test_size)
+		_assert_true(button_rect.end.x <= content_rect.end.x + 1.0, "roll button ends inside content panel at %s" % test_size)
+
+
+func _collect_roll_buttons(node: Node, output: Array[Button]) -> void:
+	for child in node.get_children():
+		if child is Button and str((child as Button).text).begins_with("ROLL"):
+			output.append(child as Button)
+		_collect_roll_buttons(child, output)
 
 
 func _find_button(node: Node, exact_text: String) -> Button:

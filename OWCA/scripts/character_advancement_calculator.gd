@@ -2,6 +2,10 @@ class_name CharacterAdvancementCalculator
 extends RefCounted
 
 ## Replays a character's ordered XP ledger and exposes the next legal purchases.
+##
+## Purchase order is rules-significant: an earlier rank or prerequisite changes
+## later costs and legality. The ledger is therefore replayed from the beginning
+## on every calculation instead of incrementally mutating cached totals.
 
 const KIND_TO_CATALOG := {
 	"characteristic": "characteristics",
@@ -16,6 +20,8 @@ const SKILL_RANKS: Array[String] = [
 ]
 
 
+## Applies every valid purchase to the in-progress CharacterCalculator result,
+## records invalid entries with reasons, then builds the currently legal shop.
 func apply(state: CharacterState, result: Dictionary, repository: CharacterDataRepository) -> void:
 	result["advancement_ready"] = _is_ready(result)
 	result["advancement_options"] = []
