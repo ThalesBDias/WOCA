@@ -10,6 +10,7 @@ The contract covers creation data only. It does not define attacks, damage resol
 - Character saves use `.owchar.json` and the `owca_character` format.
 - [OWCA/data/owca_regiment_save.schema.json](OWCA/data/owca_regiment_save.schema.json) is the Draft 2020-12 regiment schema.
 - [OWCA/data/owca_character_save.schema.json](OWCA/data/owca_character_save.schema.json) is the Draft 2020-12 character schema.
+- [OWCA/data/equipment_catalog.json](OWCA/data/equipment_catalog.json) is the shared immutable equipment definition catalogue; its structure is documented by [OWCA/data/equipment_catalog.schema.json](OWCA/data/equipment_catalog.schema.json).
 - [OWCA/examples/13th_varanox_light_infantry.owreg.json](OWCA/examples/13th_varanox_light_infantry.owreg.json) is the example regiment.
 - [OWCA/examples/varanox_weapon_specialist.owchar.json](OWCA/examples/varanox_weapon_specialist.owchar.json) is the example character.
 
@@ -24,7 +25,7 @@ OWCA records three different version concepts because they answer different comp
 | `*_content_version` | Version of the rules catalog used for calculation | Warn when reproducing results with different rules data |
 | `producer.version` | Version of the application that wrote the file | Diagnostic only; do not use it instead of `schema_version` |
 
-OWCA v0.5.1 writes interoperability schema `1.1.0`. Saves made before v0.5.1 do not have `schema_version`; OWCA treats them as legacy files and continues to load supported envelope/state versions.
+OWCA v0.6.0 writes interoperability schema `1.2.0`. It adds `equipment_rules_content_version` so consumers can detect which immutable equipment definitions informed a preview. OWCA continues to load compatible 1.x files and legacy saves without `schema_version`.
 
 ## Authoritative inputs and calculated previews
 
@@ -49,6 +50,7 @@ authoritative selections + compatible rules data -> fresh calculated result
 | `schema_version` | Yes for v0.5.1+ | Public interoperability contract version |
 | `producer` | No | Writing application name and version |
 | `saved_at_utc` | No | Informational UTC save timestamp |
+| `equipment_rules_content_version` | Yes for v0.6.0+ writes | Shared equipment catalogue used for names and profile definitions |
 | `calculated_preview` | No | Disposable derived result cache |
 | `extensions` | No | Opaque namespaced data owned by other tools |
 

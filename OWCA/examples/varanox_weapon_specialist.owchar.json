@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1.0",
+  "schema_version": "1.2.0",
   "producer": {
     "name": "Only War Character Assistant",
     "version": "0.5.1-dev"
@@ -110,6 +110,7 @@
   },
   "character_rules_content_version": "0.1.0-core-guardsmen",
   "advancement_rules_content_version": "0.5.0-core-talents",
+  "equipment_rules_content_version": "0.6.0-core-equipment",
   "format": "owca_character",
   "saved_at_utc": "2026-08-02T05:53:53",
   "version": 3

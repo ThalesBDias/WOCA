@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Added a single versioned Core equipment catalogue with 115 immutable weapon, ammunition, armour, wargear, upgrade, and explicit placeholder definitions.
+- Added complete weapon-profile fields for the currently supported catalogue slice: class, range, rate of fire, Damage, Penetration, magazine capacity, Reload, weight, Availability, qualities, and ammunition links where applicable.
+- Added a read-only Armoury browser with text search, category and Availability filters, live profile details, stable IDs, and printed source-page references.
+- Added a formal Draft 2020-12 equipment-catalogue schema, strict stable-ID and cross-reference validation, and focused repository and UI regression tests.
+- Added equipment catalogue content-version metadata to newly written regiment and character files.
 - Added a living project roadmap covering JSON file safety, the weapon catalogue, character inventory, weapon modification, campaign advancement, editable journals and exports, and v1.0 stabilization.
 - Added the OWCA JSON interoperability contract with public semantic `schema_version` fields for regiment and character saves.
 - Added Draft 2020-12 schemas for `.owreg.json` and `.owchar.json` files, plus documented required and optional fields, stable-ID rules, and compatibility policy.
@@ -27,8 +32,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Regiment and character starting packages now resolve equipment through the same shared catalogue instead of maintaining duplicate local definition maps.
+- The landing page now includes a responsive third Armoury workflow and the displayed application version is `0.6.0-dev`.
+- The public interoperability schema is now `1.2.0`; older compatible major-version files remain supported and receive a migration note when equipment metadata is absent.
 - Regiment saves now use envelope/state version 2, character saves use envelope/state version 3, and both remain compatible with their earlier supported versions.
-- The public interoperability schema is now `1.1.0`.
 - The advancement rules content version is now `0.5.0-core-talents`.
 - OWCA now displays specialist and variable-cost Talents it cannot safely purchase instead of omitting them from the catalogue.
 

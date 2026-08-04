@@ -27,6 +27,7 @@ func save_character(path: String, state: CharacterState, calculation: Dictionary
 		"saved_at_utc": Time.get_datetime_string_from_system(true),
 		"character_rules_content_version": str(character_repository.data.get("content_version", "unknown")),
 		"advancement_rules_content_version": str(character_repository.advancement_data.get("content_version", "unknown")),
+		"equipment_rules_content_version": character_repository.equipment_repository.get_content_version(),
 		"character": state.to_dict(),
 		"calculated_preview": _build_preview(state, calculation),
 		"extensions": state.interoperability_extensions.duplicate(true)
@@ -95,6 +96,8 @@ func _build_migration_report(envelope: Dictionary) -> Array[String]:
 		report.append("Added public schema metadata for the next save.")
 	elif str(envelope.get("schema_version", "")) != SCHEMA_VERSION:
 		report.append("Interoperability schema %s will become %s." % [envelope.get("schema_version", "legacy"), SCHEMA_VERSION])
+	if not envelope.has("equipment_rules_content_version"):
+		report.append("Added the shared equipment catalogue version for the next save.")
 	var envelope_version := int(envelope.get("version", 0))
 	if envelope_version < FILE_VERSION:
 		report.append("Character envelope v%d will become v%d." % [envelope_version, FILE_VERSION])

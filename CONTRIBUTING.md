@@ -58,6 +58,8 @@ Avoid comments that merely translate syntax, such as â€œincrement the counter.â€
 
 Do not paste long rulebook passages. Contributors and users are expected to own the relevant books.
 
+Equipment definitions belong in `OWCA/data/equipment_catalog.json`, never in a Speciality or regiment UI script. Each definition needs a stable ID, category, printed source reference, and the fields appropriate to that category. Weapon profiles must declare class, Damage, Penetration, and qualities; ranged profiles should also declare range, rate of fire, magazine capacity, Reload, and an ammunition relationship when one exists. Add or update `equipment_catalog_test.gd` whenever the catalogue shape or a cross-reference changes.
+
 ## Adding a Talent
 
 Talent entries belong in the advancement catalog and should include:

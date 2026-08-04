@@ -10,6 +10,7 @@
     "schema_version",
     "character_rules_content_version",
     "advancement_rules_content_version",
+    "equipment_rules_content_version",
     "character"
   ],
   "properties": {
@@ -20,6 +21,7 @@
     "saved_at_utc": { "type": "string", "minLength": 1 },
     "character_rules_content_version": { "type": "string", "minLength": 1 },
     "advancement_rules_content_version": { "type": "string", "minLength": 1 },
+    "equipment_rules_content_version": { "type": "string", "minLength": 1 },
     "character": { "$ref": "#/$defs/character_state" },
     "calculated_preview": { "$ref": "#/$defs/calculated_preview" },
     "extensions": { "$ref": "#/$defs/extensions" }
