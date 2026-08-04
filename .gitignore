@@ -7,6 +7,13 @@ OWCA/.test_user/
 tmp/
 output/pdf/
 
+# Personal OWCA records saved in the repository root. Published examples live
+# under OWCA/examples/ and remain trackable.
+/*.owreg.json
+/*.owreg.json.*
+/*.owchar.json
+/*.owchar.json.*
+
 # Local printable character-sheet exports
 *_character_sheet.pdf
 *_character_sheet_page_*.png
