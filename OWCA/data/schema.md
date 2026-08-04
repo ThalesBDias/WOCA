@@ -1,5 +1,7 @@
 # Regiment data schema (v1)
 
+This document describes OWCA's source rules catalogs. It is separate from the public saved-regiment and saved-character contract in [`JSON_INTEROPERABILITY.md`](../../JSON_INTEROPERABILITY.md). The machine-readable save schemas are `owca_regiment_save.schema.json` and `owca_character_save.schema.json` in this directory.
+
 The root object provides `schema_version`, `content_version`, `budget`, `maximum_doctrines`, catalog dictionaries, `base_effects`, and `options`.
 
 Each option has:
@@ -58,4 +60,4 @@ Supported prerequisite objects are:
 
 Each prerequisite includes a short `label` for the UI. Full rule text is deliberately omitted. When an entry has no explicit source, `source_defaults` supplies the book and printed-page reference for its category.
 
-Character state version 2 stores purchases as an ordered array of stable IDs such as `characteristic:agility`, `skill:dodge`, or `talent:rapid_reload`. Replaying the list in order makes rank costs and prerequisite chains deterministic. Removing an earlier purchase causes every later purchase to be validated again.
+Character state version 3 stores durable document identity, explicit workflow state, and purchases as an ordered array of stable IDs such as `characteristic:agility`, `skill:dodge`, or `talent:rapid_reload`. Replaying the list in order makes rank costs and prerequisite chains deterministic. Removing an earlier purchase causes every later purchase to be validated again. Version 1 and 2 character states remain migration inputs.

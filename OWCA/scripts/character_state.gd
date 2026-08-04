@@ -13,7 +13,11 @@ extends RefCounted
 signal changed
 
 ## State schema version nested inside the versioned character-file envelope.
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3
+const WORKFLOW_DRAFT := "draft"
+const WORKFLOW_COMPLETE := "creation_complete"
+const WORKFLOW_CAMPAIGN := "campaign_active"
+const WORKFLOW_STATES: Array[String] = [WORKFLOW_DRAFT, WORKFLOW_COMPLETE, WORKFLOW_CAMPAIGN]
 ## Canonical order shared by entry forms, calculations, exports, and tests.
 const CHARACTERISTIC_ORDER: Array[String] = [
 	"Weapon Skill",
@@ -27,6 +31,8 @@ const CHARACTERISTIC_ORDER: Array[String] = [
 	"Fellowship"
 ]
 
+var document_id: String = ""
+var workflow_state: String = WORKFLOW_DRAFT
 var character_name: String = "New Character"
 var player_name: String = ""
 var regiment: Dictionary = {}
@@ -43,6 +49,13 @@ var wounds_roll: int = 0
 var fate_roll: int = 0
 ## Ordered stable advancement IDs. Order affects ranks, costs, and prerequisites.
 var purchased_advances: Array[String] = []
+## Opaque, namespaced data owned by external tools. It is envelope metadata,
+## not a character-building input, so calculators intentionally ignore it.
+var interoperability_extensions: Dictionary = {}
+
+
+func _init() -> void:
+	document_id = DocumentIdentity.generate()
 
 
 func set_character_name(value: String) -> void:
@@ -61,6 +74,7 @@ func set_regiment(regiment_data: Dictionary, content_version: String) -> void:
 	regiment = regiment_data.duplicate(true)
 	regiment_rules_content_version = content_version
 	regiment_resolutions.clear()
+	_mark_creation_draft()
 	changed.emit()
 
 
@@ -77,6 +91,7 @@ func set_speciality(value: String) -> void:
 		return
 	speciality_id = value
 	speciality_resolutions.clear()
+	_mark_creation_draft()
 	changed.emit()
 
 
@@ -85,6 +100,7 @@ func set_base_characteristic(characteristic: String, value: int) -> void:
 		base_characteristics.erase(characteristic)
 	else:
 		base_characteristics[characteristic] = value
+	_mark_creation_draft()
 	changed.emit()
 
 
@@ -93,16 +109,19 @@ func set_manual_adjustment(characteristic: String, value: int) -> void:
 		manual_adjustments.erase(characteristic)
 	else:
 		manual_adjustments[characteristic] = value
+	_mark_creation_draft()
 	changed.emit()
 
 
 func set_wounds_roll(value: int) -> void:
 	wounds_roll = value
+	_mark_creation_draft()
 	changed.emit()
 
 
 func set_fate_roll(value: int) -> void:
 	fate_roll = value
+	_mark_creation_draft()
 	changed.emit()
 
 
@@ -111,6 +130,7 @@ func purchase_advance(advance_id: String) -> void:
 	if clean_id.is_empty():
 		return
 	purchased_advances.append(clean_id)
+	_mark_creation_draft()
 	changed.emit()
 
 
@@ -118,6 +138,7 @@ func remove_advance_at(index: int) -> void:
 	if index < 0 or index >= purchased_advances.size():
 		return
 	purchased_advances.remove_at(index)
+	_mark_creation_draft()
 	changed.emit()
 
 
@@ -125,6 +146,7 @@ func clear_advances() -> void:
 	if purchased_advances.is_empty():
 		return
 	purchased_advances.clear()
+	_mark_creation_draft()
 	changed.emit()
 
 
@@ -142,12 +164,14 @@ func set_choice(scope: String, choice_id: String, option_id: String, enabled: bo
 		collection.erase(choice_id)
 	else:
 		collection[choice_id] = current
+	_mark_creation_draft()
 	changed.emit()
 
 
 func clear_choice(scope: String, choice_id: String) -> void:
 	var collection := regiment_resolutions if scope == "regiment" else speciality_resolutions
 	collection.erase(choice_id)
+	_mark_creation_draft()
 	changed.emit()
 
 
@@ -163,6 +187,8 @@ func get_choice(scope: String, choice_id: String) -> Array[String]:
 func to_dict() -> Dictionary:
 	return {
 		"version": SAVE_VERSION,
+		"document_id": document_id,
+		"workflow_state": workflow_state,
 		"name": character_name,
 		"player_name": player_name,
 		"regiment": regiment.duplicate(true),
@@ -182,17 +208,41 @@ func to_dict() -> Dictionary:
 ## invalid container types or unsupported versions reject the entire state.
 func from_dict(value: Dictionary) -> Error:
 	var version := int(value.get("version", 0))
-	if version not in [1, SAVE_VERSION]:
+	if version not in [1, 2, SAVE_VERSION]:
 		return ERR_INVALID_DATA
 	for field_name in ["regiment", "base_characteristics", "manual_adjustments", "regiment_resolutions", "speciality_resolutions"]:
 		if not value.get(field_name, {}) is Dictionary:
 			return ERR_INVALID_DATA
 
+	if version >= 3:
+		var loaded_document_id := str(value.get("document_id", ""))
+		var loaded_workflow_state := str(value.get("workflow_state", ""))
+		if not DocumentIdentity.is_valid(loaded_document_id) or loaded_workflow_state not in WORKFLOW_STATES:
+			return ERR_INVALID_DATA
+		document_id = loaded_document_id
+		workflow_state = loaded_workflow_state
+	else:
+		document_id = DocumentIdentity.generate()
+		workflow_state = WORKFLOW_DRAFT
+
 	character_name = str(value.get("name", "Unnamed Character")).strip_edges()
 	if character_name.is_empty():
 		character_name = "Unnamed Character"
 	player_name = str(value.get("player_name", "")).strip_edges()
-	regiment = (value.get("regiment", {}) as Dictionary).duplicate(true)
+	var loaded_regiment := (value.get("regiment", {}) as Dictionary).duplicate(true)
+	if loaded_regiment.is_empty():
+		regiment = {}
+	else:
+		# Character versions 1 and 2 embedded a version-1 regiment snapshot.
+		# Normalize it through RegimentState so every newly written version-3
+		# character satisfies the current public schema. A version-3 character
+		# that claims to be current but embeds an old snapshot is malformed.
+		if version >= SAVE_VERSION and int(loaded_regiment.get("version", 0)) != RegimentState.SAVE_VERSION:
+			return ERR_INVALID_DATA
+		var migrated_regiment := RegimentState.new()
+		if migrated_regiment.from_dict(loaded_regiment) != OK:
+			return ERR_INVALID_DATA
+		regiment = migrated_regiment.to_dict()
 	regiment_rules_content_version = str(value.get("regiment_rules_content_version", ""))
 	speciality_id = str(value.get("speciality_id", ""))
 	base_characteristics = _clean_numeric_dictionary(value.get("base_characteristics", {}) as Dictionary, false)
@@ -202,6 +252,7 @@ func from_dict(value: Dictionary) -> Error:
 	wounds_roll = int(value.get("wounds_roll", 0))
 	fate_roll = int(value.get("fate_roll", 0))
 	purchased_advances.clear()
+	interoperability_extensions.clear()
 	if version >= 2:
 		if not value.get("purchased_advances", []) is Array:
 			return ERR_INVALID_DATA
@@ -211,6 +262,28 @@ func from_dict(value: Dictionary) -> Error:
 				purchased_advances.append(clean_id)
 	changed.emit()
 	return OK
+
+
+## The caller must verify the current calculator result before completion.
+func mark_creation_complete() -> void:
+	workflow_state = WORKFLOW_COMPLETE
+	changed.emit()
+
+
+func mark_draft() -> void:
+	workflow_state = WORKFLOW_DRAFT
+	changed.emit()
+
+
+func duplicate_identity() -> void:
+	document_id = DocumentIdentity.generate()
+	workflow_state = WORKFLOW_DRAFT
+	changed.emit()
+
+
+func _mark_creation_draft() -> void:
+	if workflow_state == WORKFLOW_COMPLETE:
+		workflow_state = WORKFLOW_DRAFT
 
 
 func _clean_numeric_dictionary(value: Dictionary, allow_zero: bool) -> Dictionary:

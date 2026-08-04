@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/ThalesBDias/WOCA/main/OWCA/data/owca_character_save.schema.json",
+  "title": "OWCA character save interoperability contract",
+  "description": "Public schema for .owchar.json files written by OWCA v0.5.1 and later.",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "schema_version",
+    "character_rules_content_version",
+    "advancement_rules_content_version",
+    "character"
+  ],
+  "properties": {
+    "format": { "const": "owca_character" },
+    "version": { "const": 3 },
+    "schema_version": { "$ref": "#/$defs/schema_version" },
+    "producer": { "$ref": "#/$defs/producer" },
+    "saved_at_utc": { "type": "string", "minLength": 1 },
+    "character_rules_content_version": { "type": "string", "minLength": 1 },
+    "advancement_rules_content_version": { "type": "string", "minLength": 1 },
+    "character": { "$ref": "#/$defs/character_state" },
+    "calculated_preview": { "$ref": "#/$defs/calculated_preview" },
+    "extensions": { "$ref": "#/$defs/extensions" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "stable_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "stable_id_or_empty": {
+      "type": "string",
+      "pattern": "^$|^[a-z][a-z0-9_]*$"
+    },
+    "advance_id": {
+      "type": "string",
+      "pattern": "^(characteristic|skill|talent):[a-z][a-z0-9_]*$"
+    },
+    "document_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "producer": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "characteristics": {
+      "type": "object",
+      "propertyNames": {
+        "enum": [
+          "Weapon Skill",
+          "Ballistic Skill",
+          "Strength",
+          "Toughness",
+          "Agility",
+          "Intelligence",
+          "Perception",
+          "Willpower",
+          "Fellowship"
+        ]
+      },
+      "additionalProperties": { "type": "integer" }
+    },
+    "resolutions": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/stable_id" },
+      "additionalProperties": {
+        "type": "array",
+        "items": { "$ref": "#/$defs/stable_id" },
+        "uniqueItems": true
+      }
+    },
+    "regiment_snapshot": {
+      "type": "object",
+      "required": ["version", "document_id", "workflow_state", "name", "selections", "resolutions"],
+      "properties": {
+        "version": { "const": 2 },
+        "document_id": { "$ref": "#/$defs/document_id" },
+        "workflow_state": { "enum": ["draft", "creation_complete"] },
+        "name": { "type": "string", "minLength": 1 },
+        "selections": {
+          "type": "object",
+          "required": ["home_world", "commander", "regiment_type", "training_doctrine", "equipment_doctrine"],
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/stable_id" },
+            "uniqueItems": true
+          }
+        },
+        "resolutions": { "$ref": "#/$defs/resolutions" }
+      },
+      "additionalProperties": true
+    },
+    "character_state": {
+      "type": "object",
+      "required": [
+        "version",
+        "document_id",
+        "workflow_state",
+        "name",
+        "player_name",
+        "regiment",
+        "regiment_rules_content_version",
+        "speciality_id",
+        "base_characteristics",
+        "manual_adjustments",
+        "regiment_resolutions",
+        "speciality_resolutions",
+        "wounds_roll",
+        "fate_roll",
+        "purchased_advances"
+      ],
+      "properties": {
+        "version": { "const": 3 },
+        "document_id": { "$ref": "#/$defs/document_id" },
+        "workflow_state": { "enum": ["draft", "creation_complete", "campaign_active"] },
+        "name": { "type": "string", "minLength": 1 },
+        "player_name": { "type": "string" },
+        "regiment": {
+          "anyOf": [
+            { "$ref": "#/$defs/regiment_snapshot" },
+            { "type": "object", "maxProperties": 0 }
+          ]
+        },
+        "regiment_rules_content_version": { "type": "string" },
+        "speciality_id": { "$ref": "#/$defs/stable_id_or_empty" },
+        "base_characteristics": { "$ref": "#/$defs/characteristics" },
+        "manual_adjustments": { "$ref": "#/$defs/characteristics" },
+        "regiment_resolutions": { "$ref": "#/$defs/resolutions" },
+        "speciality_resolutions": { "$ref": "#/$defs/resolutions" },
+        "wounds_roll": { "type": "integer" },
+        "fate_roll": { "type": "integer" },
+        "purchased_advances": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/advance_id" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "calculated_preview": {
+      "description": "Non-authoritative cache. Recalculate from character when current rules are available.",
+      "type": "object",
+      "properties": {
+        "valid": { "type": "boolean" },
+        "regiment_name": { "type": "string" },
+        "speciality_id": { "$ref": "#/$defs/stable_id_or_empty" },
+        "speciality": { "type": "string" },
+        "characteristics": { "$ref": "#/$defs/characteristics" },
+        "characteristic_bonuses": { "$ref": "#/$defs/characteristics" },
+        "skills": { "$ref": "#/$defs/catalog_results" },
+        "talents": { "$ref": "#/$defs/catalog_results" },
+        "aptitudes": { "type": "array", "items": { "type": "string" } },
+        "special_rules": { "type": "array", "items": { "type": "object" } },
+        "equipment": { "$ref": "#/$defs/catalog_results" },
+        "wounds_modifier": { "type": "integer" },
+        "wounds": { "type": "integer" },
+        "fate_points": { "type": "integer" },
+        "movement": { "type": "object", "additionalProperties": { "type": "number" } },
+        "xp_budget": { "type": "integer" },
+        "bonus_xp": { "type": "integer" },
+        "xp_spent": { "type": "integer" },
+        "xp_remaining": { "type": "integer" },
+        "resolved_choices": { "type": "array", "items": { "type": "object" } },
+        "unresolved_choices": { "type": "array", "items": { "type": "object" } },
+        "sources": { "type": "array", "items": { "type": "object" } },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "catalog_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "$ref": "#/$defs/stable_id" } },
+        "additionalProperties": true
+      }
+    },
+    "extensions": {
+      "description": "Opaque, consumer-owned, namespaced data preserved by OWCA.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]+/[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "additionalProperties": true
+    }
+  }
+}

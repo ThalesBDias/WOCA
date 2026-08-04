@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/ThalesBDias/WOCA/main/OWCA/data/owca_regiment_save.schema.json",
+  "title": "OWCA regiment save interoperability contract",
+  "description": "Public schema for .owreg.json files written by OWCA v0.5.1 and later.",
+  "type": "object",
+  "required": [
+    "format",
+    "version",
+    "schema_version",
+    "rules_content_version",
+    "regiment"
+  ],
+  "properties": {
+    "format": { "const": "owca_regiment" },
+    "version": { "const": 2 },
+    "schema_version": { "$ref": "#/$defs/schema_version" },
+    "producer": { "$ref": "#/$defs/producer" },
+    "saved_at_utc": { "type": "string", "minLength": 1 },
+    "rules_content_version": { "type": "string", "minLength": 1 },
+    "regiment": { "$ref": "#/$defs/regiment_state" },
+    "character_creation_choices": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/choice" }
+    },
+    "calculated_preview": { "$ref": "#/$defs/calculated_preview" },
+    "extensions": { "$ref": "#/$defs/extensions" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "stable_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "document_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "producer": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "id_list": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stable_id" },
+      "uniqueItems": true
+    },
+    "selections": {
+      "type": "object",
+      "required": [
+        "home_world",
+        "commander",
+        "regiment_type",
+        "training_doctrine",
+        "equipment_doctrine"
+      ],
+      "properties": {
+        "home_world": { "$ref": "#/$defs/id_list" },
+        "commander": { "$ref": "#/$defs/id_list" },
+        "regiment_type": { "$ref": "#/$defs/id_list" },
+        "training_doctrine": { "$ref": "#/$defs/id_list" },
+        "equipment_doctrine": { "$ref": "#/$defs/id_list" }
+      },
+      "additionalProperties": true
+    },
+    "resolutions": {
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/stable_id" },
+      "additionalProperties": { "$ref": "#/$defs/id_list" }
+    },
+    "regiment_state": {
+      "type": "object",
+      "required": ["version", "document_id", "workflow_state", "name", "selections", "resolutions"],
+      "properties": {
+        "version": { "const": 2 },
+        "document_id": { "$ref": "#/$defs/document_id" },
+        "workflow_state": { "enum": ["draft", "creation_complete"] },
+        "name": { "type": "string", "minLength": 1 },
+        "selections": { "$ref": "#/$defs/selections" },
+        "resolutions": { "$ref": "#/$defs/resolutions" }
+      },
+      "additionalProperties": true
+    },
+    "choice": {
+      "type": "object",
+      "required": ["id", "prompt", "minimum", "maximum", "options"],
+      "properties": {
+        "id": { "$ref": "#/$defs/stable_id" },
+        "prompt": { "type": "string" },
+        "scope": { "enum": ["regiment", "per_character"] },
+        "minimum": { "type": "number", "minimum": 0 },
+        "maximum": { "type": "number", "minimum": 1 },
+        "unique_group": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "label", "effects"],
+            "properties": {
+              "id": { "$ref": "#/$defs/stable_id" },
+              "label": { "type": "string" },
+              "effects": { "type": "object" }
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "calculated_preview": {
+      "description": "Non-authoritative cache. Recalculate from regiment when current rules are available.",
+      "type": "object",
+      "properties": {
+        "valid": { "type": "boolean" },
+        "points_budget": { "type": "integer" },
+        "points_spent": { "type": "integer" },
+        "points_remaining": { "type": "integer" },
+        "doctrine_slots_used": { "type": "integer", "minimum": 0 },
+        "doctrine_slots_maximum": { "type": "integer", "minimum": 0 },
+        "optional_doctrines_used": { "type": "integer", "minimum": 0 },
+        "optional_doctrines_maximum": { "type": "integer", "minimum": 0 },
+        "characteristics": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "skills": { "$ref": "#/$defs/catalog_results" },
+        "talents": { "$ref": "#/$defs/catalog_results" },
+        "aptitudes": { "type": "array", "items": { "type": "string" } },
+        "special_rules": { "type": "array", "items": { "type": "object" } },
+        "wounds_modifier": { "type": "integer" },
+        "equipment": { "$ref": "#/$defs/catalog_results" },
+        "standard_kit_points": { "type": "integer" },
+        "bonus_xp": { "type": "integer" },
+        "resolved_choices": { "type": "array", "items": { "type": "object" } },
+        "unresolved_choices": { "type": "array", "items": { "type": "object" } },
+        "sources": { "type": "array", "items": { "type": "object" } },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": true
+    },
+    "catalog_results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "$ref": "#/$defs/stable_id" } },
+        "additionalProperties": true
+      }
+    },
+    "extensions": {
+      "description": "Opaque, consumer-owned, namespaced data preserved by OWCA.",
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]+/[A-Za-z0-9][A-Za-z0-9._-]*$"
+      },
+      "additionalProperties": true
+    }
+  }
+}
