@@ -18,6 +18,12 @@ const ABBREVIATIONS := {
 	"Toughness": "T", "Agility": "Ag", "Intelligence": "Int",
 	"Perception": "Per", "Willpower": "WP", "Fellowship": "Fel"
 }
+const TALENT_APTITUDES: Array[String] = [
+	"Agility", "Ballistic Skill", "Defence", "Fellowship", "Fieldcraft",
+	"Finesse", "General", "Intelligence", "Knowledge", "Leadership",
+	"Offence", "Perception", "Psyker", "Social", "Strength", "Tech",
+	"Toughness", "Weapon Skill", "Willpower"
+]
 
 const COLOUR_BACKGROUND := Color("#101612")
 const COLOUR_PANEL := Color("#19221c")
@@ -43,6 +49,10 @@ var calculation: Dictionary = {}
 var creation_roll_details: Dictionary = {}
 var active_stage: String = "regiment"
 var advancement_filter: String = "characteristic"
+var advancement_search: String = ""
+var talent_tier_filter: int = 0
+var talent_aptitude_filter: String = ""
+var talent_status_filter: String = "all"
 var action_message: String = "Load a saved regiment to begin. Use physical or Discord dice, or OWCA's optional creation rolls."
 
 var name_edit: LineEdit
@@ -66,6 +76,8 @@ var character_load_dialog: FileDialog
 var character_export_dialog: FileDialog
 var roll_overwrite_dialog: ConfirmationDialog
 var pending_roll_action: Callable
+var advancement_options_container: VBoxContainer
+var talent_filter_summary: Label
 
 
 func _ready() -> void:
@@ -123,7 +135,9 @@ func _build_header() -> Control:
 	title.add_theme_color_override("font_color", COLOUR_GOLD)
 	title_column.add_child(title)
 	var subtitle := Label.new()
-	subtitle.text = "GUARDSMAN CREATION TEST  |  v0.4 DEV"
+	# All three workflow headers use the same project.godot release value.
+	var app_version := str(ProjectSettings.get_setting("application/config/version", "development"))
+	subtitle.text = "GUARDSMAN CREATION TEST  |  v%s" % app_version
 	subtitle.add_theme_font_size_override("font_size", 11)
 	subtitle.add_theme_color_override("font_color", COLOUR_MUTED)
 	title_column.add_child(subtitle)
@@ -183,7 +197,7 @@ func _build_workspace() -> Control:
 	navigation_spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	navigation.add_child(navigation_spacer)
 	var scope_note := Label.new()
-	scope_note.text = "Testing scope:\n5 Core Guardsman Specialities\n600 XP advancement stage\nCurated Core Talent list\nA4 PDF + PNG dossier export\nCreation dice helpers only\nNo gameplay dice rolling"
+	scope_note.text = "Testing scope:\n5 Core Guardsman Specialities\n600 XP advancement stage\nComplete Core Talent browser\nA4 PDF + PNG dossier export\nCreation dice helpers only\nNo gameplay dice rolling"
 	scope_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	scope_note.add_theme_font_size_override("font_size", 11)
 	scope_note.add_theme_color_override("font_color", COLOUR_MUTED)
@@ -692,18 +706,114 @@ func _render_xp_stage() -> void:
 		filter_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		filter_button.pressed.connect(_select_advancement_filter.bind(filter_kind))
 		filters.add_child(filter_button)
+	if advancement_filter == "talent":
+		_build_talent_browser_controls()
 
 	if not bool(calculation.get("advancement_ready", false)):
 		stage_content.add_child(_notice_label("Resolve the Speciality, all nine Characteristics, and all character choices before buying advances.", COLOUR_BAD))
 
+	advancement_options_container = VBoxContainer.new()
+	advancement_options_container.add_theme_constant_override("separation", 8)
+	stage_content.add_child(advancement_options_container)
+	_refresh_advancement_options()
+
+
+func _build_talent_browser_controls() -> void:
+	stage_content.add_child(_section_label("COMPLETE CORE TALENT BROWSER"))
+	var search := LineEdit.new()
+	search.placeholder_text = "Search by Talent name, effect, or prerequisite"
+	search.text = advancement_search
+	search.clear_button_enabled = true
+	search.text_changed.connect(_on_talent_search_changed)
+	stage_content.add_child(search)
+
+	var selectors := GridContainer.new()
+	selectors.columns = 3
+	selectors.add_theme_constant_override("h_separation", 7)
+	stage_content.add_child(selectors)
+	var tier_selector := OptionButton.new()
+	tier_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for tier in range(0, 4):
+		tier_selector.add_item("ALL TIERS" if tier == 0 else "TIER %d" % tier)
+		tier_selector.set_item_metadata(tier_selector.item_count - 1, tier)
+		if tier == talent_tier_filter:
+			tier_selector.select(tier_selector.item_count - 1)
+	tier_selector.item_selected.connect(_on_talent_tier_selected.bind(tier_selector))
+	selectors.add_child(tier_selector)
+
+	var aptitude_selector := OptionButton.new()
+	aptitude_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	aptitude_selector.add_item("ALL APTITUDES")
+	aptitude_selector.set_item_metadata(0, "")
+	for aptitude in TALENT_APTITUDES:
+		aptitude_selector.add_item(aptitude.to_upper())
+		aptitude_selector.set_item_metadata(aptitude_selector.item_count - 1, aptitude)
+		if aptitude == talent_aptitude_filter:
+			aptitude_selector.select(aptitude_selector.item_count - 1)
+	aptitude_selector.item_selected.connect(_on_talent_aptitude_selected.bind(aptitude_selector))
+	selectors.add_child(aptitude_selector)
+
+	var status_selector := OptionButton.new()
+	status_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var statuses := [
+		["ALL STATUSES", "all"],
+		["PURCHASABLE", "available"],
+		["PREREQUISITES MET", "prerequisites_met"],
+		["MISSING PREREQUISITES", "prerequisites_unmet"],
+		["CHOICE NOT SUPPORTED", "unsupported"]
+	]
+	for status: Array in statuses:
+		status_selector.add_item(str(status[0]))
+		status_selector.set_item_metadata(status_selector.item_count - 1, str(status[1]))
+		if str(status[1]) == talent_status_filter:
+			status_selector.select(status_selector.item_count - 1)
+	status_selector.item_selected.connect(_on_talent_status_selected.bind(status_selector))
+	selectors.add_child(status_selector)
+
+	talent_filter_summary = _notice_label("", COLOUR_MUTED)
+	stage_content.add_child(talent_filter_summary)
+
+
+func _refresh_advancement_options() -> void:
+	if advancement_options_container == null or not is_instance_valid(advancement_options_container):
+		return
+	_clear_children(advancement_options_container)
+	var category_total := 0
 	var visible_options := 0
 	for option: Dictionary in calculation.get("advancement_options", []):
 		if str(option.get("kind", "")) != advancement_filter:
 			continue
+		category_total += 1
+		if advancement_filter == "talent" and not _talent_option_matches(option):
+			continue
 		visible_options += 1
-		stage_content.add_child(_build_advancement_card(option))
+		advancement_options_container.add_child(_build_advancement_card(option))
+	if talent_filter_summary != null and is_instance_valid(talent_filter_summary):
+		talent_filter_summary.text = "SHOWING %d OF %d CORE TALENTS" % [visible_options, category_total]
 	if visible_options == 0:
-		stage_content.add_child(_wrapped_label("No advancements are available in this category.", COLOUR_MUTED))
+		advancement_options_container.add_child(_wrapped_label("No advancements match the current filters.", COLOUR_MUTED))
+
+
+func _talent_option_matches(option: Dictionary) -> bool:
+	var query := advancement_search.strip_edges().to_lower()
+	if not query.is_empty():
+		var searchable := "%s %s %s" % [option.get("name", ""), option.get("summary", ""), option.get("prerequisite_label", "")]
+		if query not in searchable.to_lower():
+			return false
+	if talent_tier_filter > 0 and int(option.get("tier", 0)) != talent_tier_filter:
+		return false
+	if not talent_aptitude_filter.is_empty() and talent_aptitude_filter not in (option.get("aptitudes", []) as Array):
+		return false
+	match talent_status_filter:
+		"available":
+			return bool(option.get("available", false))
+		"prerequisites_met":
+			return bool(option.get("prerequisites_met", false))
+		"prerequisites_unmet":
+			return not bool(option.get("prerequisites_met", false))
+		"unsupported":
+			return not bool(option.get("purchase_supported", true))
+	return true
 
 
 func _build_purchase_row(purchase: Dictionary) -> Control:
@@ -755,6 +865,11 @@ func _build_advancement_card(option: Dictionary) -> Control:
 	column.add_child(title)
 	if recommended:
 		column.add_child(_notice_label("★ RECOMMENDED FOR THIS SPECIALITY", COLOUR_GOLD))
+	if bool(option.get("specialist", false)):
+		column.add_child(_notice_label("SPECIALIST TALENT", COLOUR_GOLD))
+	var summary := str(option.get("summary", ""))
+	if not summary.is_empty():
+		column.add_child(_wrapped_label(summary, COLOUR_TEXT))
 	var matched: Array[String] = []
 	for aptitude: Variant in option.get("matched_aptitudes", []):
 		matched.append(str(aptitude))
@@ -763,8 +878,11 @@ func _build_advancement_card(option: Dictionary) -> Control:
 		aptitudes.append(str(aptitude))
 	column.add_child(_wrapped_label("%s  |  Aptitudes: %s  |  Matches: %d (%s)" % [option.get("rank_label", ""), " + ".join(aptitudes), int(option.get("match_count", 0)), ", ".join(matched) if not matched.is_empty() else "none"], COLOUR_MUTED))
 	if str(option.get("kind", "")) == "talent":
-		column.add_child(_wrapped_label("Prerequisites: %s" % option.get("prerequisite_label", "None"), COLOUR_MUTED))
-	if not available:
+		var prerequisites_met := bool(option.get("prerequisites_met", false))
+		column.add_child(_wrapped_label("Prerequisites: %s" % option.get("prerequisite_label", "None"), COLOUR_GOOD if prerequisites_met else COLOUR_BAD))
+	if not bool(option.get("purchase_supported", true)):
+		column.add_child(_notice_label(str(option.get("unsupported_reason", "This Talent choice is not supported yet.")), COLOUR_BAD))
+	if not available and str(option.get("reason", "")) != str(option.get("unsupported_reason", "")):
 		column.add_child(_notice_label(str(option.get("reason", "Unavailable.")), COLOUR_BAD))
 	column.add_child(_notice_label(str(option.get("source_label", "")), COLOUR_MUTED))
 	var buy := _make_action_button("BUY FOR %d XP" % int(option.get("cost", 0)), _purchase_advance.bind(str(option.get("id", ""))))
@@ -1110,6 +1228,26 @@ func _on_fate_roll_changed(value: float) -> void:
 func _select_advancement_filter(kind: String) -> void:
 	advancement_filter = kind
 	_render_active_stage()
+
+
+func _on_talent_search_changed(value: String) -> void:
+	advancement_search = value
+	_refresh_advancement_options()
+
+
+func _on_talent_tier_selected(index: int, selector: OptionButton) -> void:
+	talent_tier_filter = int(selector.get_item_metadata(index))
+	_refresh_advancement_options()
+
+
+func _on_talent_aptitude_selected(index: int, selector: OptionButton) -> void:
+	talent_aptitude_filter = str(selector.get_item_metadata(index))
+	_refresh_advancement_options()
+
+
+func _on_talent_status_selected(index: int, selector: OptionButton) -> void:
+	talent_status_filter = str(selector.get_item_metadata(index))
+	_refresh_advancement_options()
 
 
 func _purchase_advance(advance_id: String) -> void:

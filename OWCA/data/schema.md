@@ -41,16 +41,20 @@ The UI reads `selection_rules`; category limits and doctrine-slot participation 
 
 `guardsman_advancements.json` keeps XP rules separate from Speciality starting packages. Its `costs` object contains three matrices: `characteristic`, `skill`, and `talent`. Each matrix has `two`, `one`, and `zero` arrays selected by the number of matching Aptitudes. Characteristic and Skill arrays have four sequential entries; Talent arrays have one entry for each of three tiers.
 
-Every Characteristic or Skill entry provides a display `name`, exactly two `aptitudes`, an optional `recommended_for` array of Speciality IDs, and an optional `source`. Talent entries additionally provide `tier`, `prerequisites`, and optional `repeatable`.
+Every Characteristic or Skill entry provides a display `name`, exactly two `aptitudes`, an optional `recommended_for` array of Speciality IDs, and an optional `source`. Talent entries additionally provide `tier`, `prerequisites`, a concise original `summary`, and optional `repeatable` or `specialist` flags. A Talent that OWCA can price and explain but cannot safely add to the purchase ledger sets `purchase_supported` to `false` and supplies a player-facing `unsupported_reason`; the browser keeps the entry visible and disables its purchase action.
 
 Supported prerequisite objects are:
 
 - `characteristic`: requires a named Characteristic at `minimum`.
 - `skill`: requires a Skill ID at `minimum_rank`, where 1 is Known and 2 is Trained (+10).
+- `skill_any`: requires any Skill from an explicit `ids` array at `minimum_rank`.
 - `talent`: requires one Talent ID.
 - `talent_any`: requires any Talent from an explicit `ids` array.
+- `talent_prefix`: requires any known Talent whose stable ID shares a prefix.
 - `talent_prefix_count`: requires a minimum number of known Talents whose stable IDs share a prefix.
 - `skill_prefix`: requires any known Skill specialisation whose stable ID shares a prefix.
+- `aptitude`: requires one named Aptitude.
+- `special`: records an implant, Psy Rating, selected-skill rank, or other state not yet represented by the current character model. It remains unmet until a dedicated subsystem exposes that state explicitly.
 
 Each prerequisite includes a short `label` for the UI. Full rule text is deliberately omitted. When an entry has no explicit source, `source_defaults` supplies the book and printed-page reference for its category.
 

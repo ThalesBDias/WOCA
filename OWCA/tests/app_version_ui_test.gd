@@ -21,6 +21,11 @@ func _run() -> void:
 		"REGIMENT CREATION  |  v%s" % version,
 		"Regiment Creator displays the configured application version"
 	)
+	await _assert_scene_contains(
+		"res://OWCA/ui/CharacterCreator.tscn",
+		"GUARDSMAN CREATION TEST  |  v%s" % version,
+		"Character Creator displays the configured application version"
+	)
 	print("OWCA app version UI tests passed.")
 	quit(0)
 
