@@ -1,4 +1,4 @@
-# Only War Character Assistant v0.5.1 development
+# Only War Character Assistant v0.6.0 development
 
 This module is a data-driven Godot 4 regiment and Guardsman creation assistant. Regiment creation includes every Core Rulebook option in the five supported categories: 8 Home Worlds, 9 Commanding Officers, 8 Regiment Types, 7 Training Doctrines, and 7 Equipment Doctrines. The current character-creation testing slice implements the five Core Guardsman Specialities: Heavy Gunner, Medic, Operator, Sergeant, and Weapon Specialist. Entries were checked against the supplied Only War Core Rulebook PDF; content files record printed book pages rather than PDF viewer indices.
 
@@ -20,6 +20,8 @@ OWCA/
     regiment_options.json       Regiment rules and catalog data
     guardsman_specialities.json Five Core Guardsman starting packages
     guardsman_advancements.json XP costs, Aptitudes, prerequisites, and complete Core Talent catalog
+    equipment_catalog.json      Shared immutable equipment and weapon definitions
+    equipment_catalog.schema.json Formal equipment-catalogue JSON Schema
     regiment_options.schema.json Formal JSON Schema (Draft 2020-12)
     owca_regiment_save.schema.json Public regiment-save JSON Schema
     owca_character_save.schema.json Public character-save JSON Schema
@@ -37,6 +39,7 @@ OWCA/
     character_state.gd          Serializable individual inputs
     character_calculator.gd     Character aggregation and validation
     character_advancement_calculator.gd Ordered XP ledger and purchase validation
+    equipment_data_repository.gd Shared equipment validation, search data, and lookup
     interoperability_contract.gd Shared public-schema and extension validation
     document_identity.gd       Durable UUID generation and validation
     atomic_json_store.gd       Validated atomic writes, backups, and recovery
@@ -52,6 +55,8 @@ OWCA/
     RegimentCreator.tscn        Regiment workflow
     character_creator.gd        Guardsman workflow UI/controller
     CharacterCreator.tscn       Guardsman workflow scene
+    armoury_catalogue.gd        Read-only searchable equipment browser
+    ArmouryCatalogue.tscn       Armoury reference scene
     printable_character_sheet.gd Original two-page field-dossier drawing
     save_recovery_dialog.gd     Explicit interrupted-save recovery prompt
   tests/
@@ -67,6 +72,8 @@ OWCA/
     interoperability_test.gd   Public JSON contract and compatibility tests
     atomic_json_store_test.gd  Atomic replacement, backup, and recovery tests
     file_safety_ui_test.gd     Save As, Duplicate, lifecycle, and recovery UI contract
+    equipment_catalog_test.gd  Equipment schema, profiles, references, and shared lookup
+    armoury_catalogue_ui_test.gd Armoury search and detail rendering
 ```
 
 ## Run
@@ -90,6 +97,8 @@ godot --headless --path . --script res://OWCA/tests/talent_browser_ui_test.gd
 godot --headless --path . --script res://OWCA/tests/interoperability_test.gd
 godot --headless --path . --script res://OWCA/tests/atomic_json_store_test.gd
 godot --headless --path . --script res://OWCA/tests/file_safety_ui_test.gd
+godot --headless --path . --script res://OWCA/tests/equipment_catalog_test.gd
+godot --headless --path . --script res://OWCA/tests/armoury_catalogue_ui_test.gd
 ```
 
 The character-sheet visual test needs a real renderer because Godot's Windows headless display driver is a dummy. It runs minimized and writes the example output to the path in `OWCA_PDF_OUTPUT`:
@@ -109,6 +118,8 @@ The Guardsman Character Creator loads an `.owreg.json` regiment, accepts manuall
 Character creation also provides optional rolls for all nine base Characteristics (`2d10 + 20`), Wounds (`1d5`), and Fate (`1d10`). Every result shows its individual dice, remains manually editable, and requires confirmation before replacing an entered value. Manual edits clear the transient OWCA roll breakdown. Gameplay tests, attacks, damage, and ammunition use remain at the table.
 
 The v0.5 development slice expands the ordered starting-XP ledger into a complete Core Talent browser. Its 124 entries and supported specialisations can be searched by name, brief effect, or prerequisite and filtered by Tier, Aptitude, prerequisite state, and purchase state. Every Talent displays its calculated Aptitude-based XP cost, short rules summary, prerequisites, availability reason, and Core Rulebook reference. Specialist, implant-dependent, Psy Rating, and variable Logistics-cost Talents remain visible but are disabled whenever OWCA cannot represent their required choice or state safely.
+
+The v0.6 Armoury is a read-only reference over one shared, versioned catalogue. It exposes weapon profiles, ammunition relationships, armour coverage, weights, Availability, concise summaries, stable IDs, and printed Core references without creating owned inventory. Adding, removing, equipping, carrying, and tracking ammunition quantities remain v0.7 responsibilities; applying weapon upgrades remains v0.8.
 
 The character workflow is responsive down to a 960x650 minimum window. Advancement actions remain inside their cards, horizontal stage scrolling is disabled, and the live-summary column automatically hides below 1100 pixels so the active form keeps usable space.
 

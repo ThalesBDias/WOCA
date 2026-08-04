@@ -15,8 +15,8 @@ Attacks, damage rolls, tests, current-magazine tracking, temporary Wounds, condi
 | v0.3.0 | Released | Regiment and Guardsman foundation | Create a Core regiment and a character from the five supported Guardsman Specialities |
 | v0.4.0 | Released | Creation rolls, starting XP, and printable dossiers | Complete creation inputs, spend the initial allowance, and export an A4 record |
 | v0.5.0 | Implemented | Complete Core Talent browser | Search, filter, price, validate, and purchase the complete Core Talent catalogue |
-| v0.5.1 | Current development | JSON interoperability and file safety | Exchange versioned data safely, migrate older files, and recover interrupted saves |
-| v0.6.0 | Planned | Weapon and equipment catalogue | Browse complete supported equipment definitions and weapon statistics |
+| v0.5.1 | Released | JSON interoperability and file safety | Exchange versioned data safely, migrate older files, and recover interrupted saves |
+| v0.6.0 | Current development | Weapon and equipment catalogue | Browse complete supported equipment definitions and weapon statistics |
 | v0.7.0 | Planned | Character inventory and loadouts | Maintain owned gear, armour locations, loadout completeness, and carried weight |
 | v0.8.0 | Planned | Weapon modifications | Upgrade individual weapons and calculate compatible modified statistics |
 | v0.9.0 | Planned | Campaign advancement | Award XP, manage lasting character changes, and advance Guardsmen and Comrades |
@@ -50,7 +50,7 @@ Combat engines may consume these files, but combat rules and session state do no
 
 Save As is not the same operation as Duplicate. Save As preserves the record's document ID at a different path; Duplicate generates a new document ID so external tools do not mistake two independent characters for one record. A lifecycle transition is explicit and validated rather than inferred merely because every current field happens to be filled.
 
-## v0.6.0 - Weapon and equipment catalogue
+## v0.6.0 - Weapon and equipment catalogue (current development)
 
 Goal: establish one trustworthy, searchable source of supported Core weapon, ammunition, armour, gear, and upgrade definitions.
 

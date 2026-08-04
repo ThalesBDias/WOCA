@@ -2,7 +2,7 @@
 
 This document describes OWCA's source rules catalogs. It is separate from the public saved-regiment and saved-character contract in [`JSON_INTEROPERABILITY.md`](../../JSON_INTEROPERABILITY.md). The machine-readable save schemas are `owca_regiment_save.schema.json` and `owca_character_save.schema.json` in this directory.
 
-The root object provides `schema_version`, `content_version`, `budget`, `maximum_doctrines`, catalog dictionaries, `base_effects`, and `options`.
+The regiment root object provides `schema_version`, `content_version`, `budget`, `maximum_doctrines`, rule catalog dictionaries, `base_effects`, and `options`. Equipment definitions are owned separately by `equipment_catalog.json`.
 
 Each option has:
 
@@ -38,6 +38,12 @@ A choice belongs to its parent option and contains `id`, `prompt`, `minimum`, `m
 `requirements.all` means every listed option ID must be selected. `requirements.any` means at least one listed option ID must be selected. `excludes` lists incompatible option IDs. These checks are symmetrical at calculation time even if only one side declares the exclusion.
 
 The UI reads `selection_rules`; category limits and doctrine-slot participation are therefore data rather than widget logic.
+
+## Equipment catalogue schema (v1)
+
+`equipment_catalog.json` is the single immutable definition source used by regiment creation, character creation, the Armoury browser, exports, and future inventory consumers. Every item has a stable `id`, `name`, category, concise source information, and a printed source-page reference. Applicable records add weight, Availability, ammunition relationships, armour coverage, or a weapon `profile` containing class, Damage, Penetration, qualities, and ranged profile fields.
+
+The catalogue does not store ownership, current ammunition, equipped state, or installed modifications. Those values describe a particular character's item instance and must not be written back into a shared definition. `equipment_catalog.schema.json` documents the machine-readable shape; `EquipmentDataRepository` additionally checks unique IDs, source references, weapon profile completeness, and ammunition cross-references at runtime.
 
 ## Character advancement data schema (v1)
 

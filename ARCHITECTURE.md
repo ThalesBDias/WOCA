@@ -130,13 +130,13 @@ Tests under `OWCA/tests/` are executable documentation:
 
 Every bug fix should add a test that fails before the fix. Every new rules-data shape should include at least one accepted and one rejected example.
 
-## Planned equipment architecture
+## Equipment architecture
 
-Future weapon work should distinguish catalog definitions from owned instances:
+`EquipmentDataRepository` owns the v0.6 immutable catalogue and is shared by the regiment and character repositories. Equipment work distinguishes definitions from future owned instances:
 
 - a weapon definition contains immutable base statistics;
 - an owned weapon instance has a unique ID, craftsmanship, modifications, and notes;
 - temporary ammunition belongs to session/loadout state rather than the immutable definition; and
 - modified statistics are calculated through a documented pipeline rather than written back into base data.
 
-This separation will let two weapons of the same type carry different modifications without duplicating catalog rules.
+The read-only Armoury consumes definitions directly. This separation will let the v0.7 inventory give two copies of the same weapon independent ownership and let v0.8 modify each instance without duplicating or mutating catalog rules.
