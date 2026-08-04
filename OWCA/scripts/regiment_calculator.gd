@@ -10,6 +10,7 @@ extends RefCounted
 func calculate(state: RegimentState, repository: RegimentDataRepository) -> Dictionary:
 	var result := {
 		"valid": false,
+		"points_budget": int(repository.data.get("budget", 12)),
 		"points_spent": 0,
 		"points_remaining": int(repository.data.get("budget", 12)),
 		"doctrine_slots_used": 0,

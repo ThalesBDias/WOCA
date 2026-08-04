@@ -1,0 +1,178 @@
+# OWCA JSON interoperability contract
+
+This document defines the public JSON boundary introduced in OWCA v0.5.1. It is intended for character-sheet tools, campaign utilities, virtual tabletops, and independent combat engines that exchange regiment or character data with OWCA.
+
+The contract covers creation data only. It does not define attacks, damage resolution, current ammunition, temporary wounds, initiative, conditions, or other live gameplay state. Another tool may store those values in its own files or in OWCA's `extensions` object.
+
+## Contract files
+
+- Regiment saves use `.owreg.json` and the `owca_regiment` format.
+- Character saves use `.owchar.json` and the `owca_character` format.
+- [OWCA/data/owca_regiment_save.schema.json](OWCA/data/owca_regiment_save.schema.json) is the Draft 2020-12 regiment schema.
+- [OWCA/data/owca_character_save.schema.json](OWCA/data/owca_character_save.schema.json) is the Draft 2020-12 character schema.
+- [OWCA/examples/13th_varanox_light_infantry.owreg.json](OWCA/examples/13th_varanox_light_infantry.owreg.json) is the example regiment.
+- [OWCA/examples/varanox_weapon_specialist.owchar.json](OWCA/examples/varanox_weapon_specialist.owchar.json) is the example character.
+
+## The three kinds of version
+
+OWCA records three different version concepts because they answer different compatibility questions.
+
+| Field | Meaning | Consumer action |
+| --- | --- | --- |
+| `schema_version` | Public structure and field semantics, using `major.minor.patch` | Reject an unsupported major version; tolerate added fields within the same major |
+| `version` | Legacy OWCA envelope/state migration number | Preserve it and follow the appropriate schema or reader migration |
+| `*_content_version` | Version of the rules catalog used for calculation | Warn when reproducing results with different rules data |
+| `producer.version` | Version of the application that wrote the file | Diagnostic only; do not use it instead of `schema_version` |
+
+OWCA v0.5.1 writes interoperability schema `1.1.0`. Saves made before v0.5.1 do not have `schema_version`; OWCA treats them as legacy files and continues to load supported envelope/state versions.
+
+## Authoritative inputs and calculated previews
+
+The `regiment` or `character` object is authoritative. It contains what the player named, selected, entered, resolved, or purchased. A consumer that has compatible OWCA rules data should calculate from this object.
+
+`calculated_preview` is a convenient, non-authoritative snapshot. It includes totals and resolved collections such as Characteristics, Skills, Talents, Aptitudes, rules, equipment, Wounds, Fate, Movement, and XP when relevant. It lets a read-only consumer display a useful dossier without embedding the calculator.
+
+Never write changes only into `calculated_preview`. OWCA ignores that object when loading and recalculates it from authoritative state. A preview may also differ when a file is opened with a newer rules content version.
+
+```text
+authoritative selections + compatible rules data -> fresh calculated result
+                                             \
+                                              -> calculated_preview at save time
+```
+
+## Common envelope fields
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `format` | Yes | Exact discriminator: `owca_regiment` or `owca_character` |
+| `version` | Yes | Supported numeric OWCA envelope version |
+| `schema_version` | Yes for v0.5.1+ | Public interoperability contract version |
+| `producer` | No | Writing application name and version |
+| `saved_at_utc` | No | Informational UTC save timestamp |
+| `calculated_preview` | No | Disposable derived result cache |
+| `extensions` | No | Opaque namespaced data owned by other tools |
+
+Unknown top-level fields are allowed so readers can tolerate additive contract changes. OWCA does not promise to preserve arbitrary unknown fields. Use `extensions` for data that must survive an OWCA load/save cycle.
+
+Current regiment envelopes use numeric version `2`; current character envelopes use version `3`. Supported older envelope versions are migration inputs, not examples of the current write contract.
+
+## Regiment authoritative state
+
+The top-level `regiment` object contains:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `version` | Yes | Regiment state migration version; currently `2` |
+| `document_id` | Yes | Durable UUID identifying the record independently from its name or path |
+| `workflow_state` | Yes | `draft` or `creation_complete` |
+| `name` | Yes | Player-facing regiment name |
+| `selections` | Yes | Arrays of stable option IDs grouped by creation category |
+| `resolutions` | Yes | Regiment-wide choice ID to selected answer-ID arrays |
+
+`selections` always provides these category keys:
+
+- `home_world`
+- `commander`
+- `regiment_type`
+- `training_doctrine`
+- `equipment_doctrine`
+
+The top-level `rules_content_version` identifies the regiment rules catalog. `character_creation_choices` contains snapshots of deferred `per_character` choices for inspection and older integrations, but current OWCA character calculation regenerates those choices from the selected regiment and current rules data.
+
+## Character authoritative state
+
+The top-level `character` object contains:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `version` | Yes | Character state migration version; currently `3` |
+| `document_id` | Yes | Durable UUID identifying the character record |
+| `workflow_state` | Yes | `draft`, `creation_complete`, or the reserved `campaign_active` state |
+| `name`, `player_name` | Yes | Player-entered identity fields |
+| `regiment` | Yes | Authoritative embedded regiment-state snapshot |
+| `regiment_rules_content_version` | Yes | Regiment rules used when the snapshot was selected |
+| `speciality_id` | Yes | Stable Guardsman Speciality ID |
+| `base_characteristics` | Yes | The nine raw accepted creation values |
+| `manual_adjustments` | Yes | Explicit signed adjustments applied after package modifiers |
+| `regiment_resolutions` | Yes | Per-character answers to regiment choice IDs |
+| `speciality_resolutions` | Yes | Answers to Speciality choice IDs |
+| `wounds_roll`, `fate_roll` | Yes | Accepted raw creation dice, or `0` while unresolved |
+| `purchased_advances` | Yes | Ordered stable advancement IDs |
+
+Purchase order is meaningful. Advancement IDs such as `skill:dodge` or `talent:rapid_reload` must be replayed in order because costs, ranks, affordability, and prerequisites can depend on earlier entries.
+
+Lifecycle state is explicit, not inferred from the current calculated preview. Editing a completed creation input reopens the record as a draft. `campaign_active` is reserved by the schema for the v0.9 campaign-advancement workflow.
+
+## Document identity, Save As, and Duplicate
+
+`document_id` is the stable identity of a regiment or character record. Consumers should use it when matching the same record across renamed or relocated files.
+
+- **Save As** changes the destination path and preserves `document_id`.
+- **Duplicate** creates a new `document_id` and resets the duplicated record to `draft`.
+- Display names and filenames are not identity keys.
+
+An embedded regiment snapshot inside a character retains the regiment document ID that supplied it. The character has its own separate document ID.
+
+## Atomic saves, backups, and recovery
+
+OWCA never writes a replacement directly over the destination. It writes `filename.tmp` in the same directory, flushes it, reopens it, parses it, and validates the complete format and state. Only a valid candidate may replace the destination.
+
+When replacing a valid existing file, OWCA rotates that file to `filename.bak` before renaming the validated temporary file into place. If replacement fails, it restores the previous destination where possible. A surviving valid `.tmp` is treated as interrupted work and is never silently overwritten.
+
+On load, OWCA reports:
+
+- a valid interrupted `.tmp` candidate alongside an otherwise valid file;
+- a valid `.bak` when the selected destination is invalid; and
+- every envelope/state migration, generated document ID, default, or lifecycle decision applied in memory.
+
+Recovery and discard operations require an explicit player choice. Migrated data is not written until the player saves it, at which point atomic replacement preserves the previous valid file as a backup.
+
+## Stable IDs
+
+Machine integrations must use IDs, never display names. Names and short summaries may be corrected, translated, or restyled without a contract change.
+
+- Rules entity IDs use lowercase snake case, such as `hive_world`, `light_infantry`, and `weapon_specialist`.
+- Choice and answer IDs use the same convention.
+- Advancement ledger IDs add a type prefix, such as `characteristic:agility`, `skill:tech_use`, or `talent:weapon_tech`.
+- Collections in `calculated_preview` retain stable `id` fields wherever the source catalog has one.
+
+An existing ID must not be silently reused for different rules. If a concept genuinely changes identity, add a new ID and document the migration.
+
+## Extension data
+
+`extensions` is an optional JSON object. OWCA does not interpret it, but validates that it is an object and preserves it through load/save cycles. Each first-level key must be namespaced as `owner/area` to avoid collisions.
+
+```json
+{
+  "extensions": {
+    "com.example.combat/character": {
+      "external_id": "character-operator-1",
+      "current_wounds": 7,
+      "conditions": ["pinned"]
+    }
+  }
+}
+```
+
+Use a domain, project ID, or similarly controlled prefix before the slash. Values beneath that key belong entirely to the external producer. Do not place essential OWCA creation selections only in an extension.
+
+## Consumer checklist
+
+1. Parse the root as a JSON object.
+2. Check `format` before interpreting any other fields.
+3. Read `schema_version`; reject unsupported major versions and treat a missing value as a legacy file.
+4. Validate against the matching JSON Schema when practical.
+5. Read authoritative `regiment` or `character` state and stable IDs.
+6. Use `document_id`, not a display name or file path, to match records.
+7. Compare rules content versions before reproducing calculated results.
+8. Recalculate when compatible rules are available; otherwise label `calculated_preview` as a save-time snapshot.
+9. Preserve `extensions` that the consumer does not own.
+10. Ignore unknown fields within a supported schema major.
+
+## Compatibility policy
+
+Patch and minor schema releases may add optional fields, preview fields, or new extension guidance without changing existing meaning. A schema major release is required for incompatible field removal, a type change, a semantic change, or reassignment of an existing stable ID.
+
+OWCA's loader accepts legacy regiment state v1 and current v2, plus character state v1/v2 and current v3. Character state v1 is migrated with an empty advancement ledger. Legacy records receive a generated document ID and safely default to `draft`; the migration report tells the player to validate and complete them again. A future reader should preserve the same principle: default absent newer fields only when the old meaning is unambiguous, and reject malformed containers rather than guessing.
+
+The executable compatibility suite is [OWCA/tests/interoperability_test.gd](OWCA/tests/interoperability_test.gd). Any save-contract change must update the schemas, examples, this document, and both round-trip and backwards-compatibility tests.

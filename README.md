@@ -1,4 +1,4 @@
-# Only War Character Assistant v0.5 development
+# Only War Character Assistant v0.5.1 development
 
 This module is a data-driven Godot 4 regiment and Guardsman creation assistant. Regiment creation includes every Core Rulebook option in the five supported categories: 8 Home Worlds, 9 Commanding Officers, 8 Regiment Types, 7 Training Doctrines, and 7 Equipment Doctrines. The current character-creation testing slice implements the five Core Guardsman Specialities: Heavy Gunner, Medic, Operator, Sergeant, and Weapon Specialist. Entries were checked against the supplied Only War Core Rulebook PDF; content files record printed book pages rather than PDF viewer indices.
 
@@ -8,7 +8,7 @@ OWCA is an unofficial, non-commercial fan-made tool. It is not affiliated with, 
 
 This repository does not include rulebook PDFs or reproduce long-form rules text. Users are expected to own the relevant source books. Its rules data is limited to numerical effects, concise summaries, and source/page references for personal tabletop use. The GNU GPL in this repository applies only to original OWCA code and other material the project authors have the right to license; it does not grant rights to third-party intellectual property.
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and patch notes, [ARCHITECTURE.md](ARCHITECTURE.md) for system boundaries and data flow, and [CONTRIBUTING.md](CONTRIBUTING.md) for the commenting, rules-data, save-format, and testing standards used by contributors.
+See [OWCA/ROADMAP.md](OWCA/ROADMAP.md) for the path to v1.0, [OWCA/CHANGELOG.md](OWCA/CHANGELOG.md) for version history and patch notes, [ARCHITECTURE.md](ARCHITECTURE.md) for system boundaries and data flow, [JSON_INTEROPERABILITY.md](JSON_INTEROPERABILITY.md) for the public save-file contract, and [CONTRIBUTING.md](CONTRIBUTING.md) for the commenting, rules-data, save-format, and testing standards used by contributors.
 
 ## Project layout
 
@@ -21,6 +21,8 @@ OWCA/
     guardsman_specialities.json Five Core Guardsman starting packages
     guardsman_advancements.json XP costs, Aptitudes, prerequisites, and complete Core Talent catalog
     regiment_options.schema.json Formal JSON Schema (Draft 2020-12)
+    owca_regiment_save.schema.json Public regiment-save JSON Schema
+    owca_character_save.schema.json Public character-save JSON Schema
     schema.md                    Data contract and extension guide
   examples/
     13th_varanox_light_infantry.owreg.json Example saved regiment
@@ -35,6 +37,9 @@ OWCA/
     character_state.gd          Serializable individual inputs
     character_calculator.gd     Character aggregation and validation
     character_advancement_calculator.gd Ordered XP ledger and purchase validation
+    interoperability_contract.gd Shared public-schema and extension validation
+    document_identity.gd       Durable UUID generation and validation
+    atomic_json_store.gd       Validated atomic writes, backups, and recovery
     character_persistence.gd    Character JSON save/load
     character_creation_roller.gd Optional, testable creation dice
     music_manager.gd           Persistent looping soundtrack and mute control
@@ -48,6 +53,7 @@ OWCA/
     character_creator.gd        Guardsman workflow UI/controller
     CharacterCreator.tscn       Guardsman workflow scene
     printable_character_sheet.gd Original two-page field-dossier drawing
+    save_recovery_dialog.gd     Explicit interrupted-save recovery prompt
   tests/
     regiment_calculator_test.gd Headless smoke tests
     character_calculator_test.gd Guardsman package and persistence tests
@@ -58,6 +64,9 @@ OWCA/
     music_manager_test.gd      Background-music import and control test
     app_version_ui_test.gd     Visible application-version regression test
     talent_browser_ui_test.gd  Complete Talent search and filter tests
+    interoperability_test.gd   Public JSON contract and compatibility tests
+    atomic_json_store_test.gd  Atomic replacement, backup, and recovery tests
+    file_safety_ui_test.gd     Save As, Duplicate, lifecycle, and recovery UI contract
 ```
 
 ## Run
@@ -78,6 +87,9 @@ godot --headless --path . --script res://OWCA/tests/character_creation_roll_ui_t
 godot --headless --path . --script res://OWCA/tests/music_manager_test.gd
 godot --headless --path . --script res://OWCA/tests/app_version_ui_test.gd
 godot --headless --path . --script res://OWCA/tests/talent_browser_ui_test.gd
+godot --headless --path . --script res://OWCA/tests/interoperability_test.gd
+godot --headless --path . --script res://OWCA/tests/atomic_json_store_test.gd
+godot --headless --path . --script res://OWCA/tests/file_safety_ui_test.gd
 ```
 
 The character-sheet visual test needs a real renderer because Godot's Windows headless display driver is a dummy. It runs minimized and writes the example output to the path in `OWCA_PDF_OUTPUT`:
@@ -88,7 +100,7 @@ godot --rendering-method gl_compatibility --path . --script res://OWCA/tests/cha
 
 The Regiment Creator resolves only regiment-wide decisions. Choices marked `per_character` are listed as deferred benefits, do not prevent a regiment from being valid, and are not answered or stored as resolutions in the regiment file. The file carries a snapshot of those choice definitions for the future Character Creator.
 
-Save files use a small versioned JSON envelope. Dossier export writes a readable plain-text summary that is suitable for printing from any editor. Rules are stored as short summaries with source/page pointers; consult the owned rulebook for complete wording.
+Save files use a public, versioned JSON contract with stable rule and document IDs, explicit draft/completed lifecycle state, separate authoritative inputs and calculated previews, formal schemas, and an opaque namespaced extension area for external tools. Validated atomic writes, automatic `.bak` rotation, interrupted `.tmp` recovery, and player-facing migration reports protect existing records. Files written before this contract remain loadable. See [JSON_INTEROPERABILITY.md](JSON_INTEROPERABILITY.md). Dossier export writes a readable plain-text summary that is suitable for printing from any editor. Rules are stored as short summaries with source/page pointers; consult the owned rulebook for complete wording.
 
 Duplicate starting Skills advance from Known through Trained (+10), Experienced (+20), and Veteran (+30). Extra copies of a non-stackable starting Talent are reported as +100 XP per duplicate, following the Core Rulebook's regiment/character creation guidance.
 

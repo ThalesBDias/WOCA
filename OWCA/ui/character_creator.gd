@@ -72,8 +72,10 @@ var summary_panel: PanelContainer
 var responsive_note: Label
 var regiment_load_dialog: FileDialog
 var character_save_dialog: FileDialog
+var character_duplicate_dialog: FileDialog
 var character_load_dialog: FileDialog
 var character_export_dialog: FileDialog
+var recovery_dialog: SaveRecoveryDialog
 var roll_overwrite_dialog: ConfirmationDialog
 var pending_roll_action: Callable
 var advancement_options_container: VBoxContainer
@@ -165,7 +167,7 @@ func _build_header() -> Control:
 	row.add_child(actions)
 	actions.add_child(_make_action_button("HOME", _return_home))
 	actions.add_child(_make_action_button("REGIMENT", _request_regiment_load))
-	actions.add_child(_make_action_button("SAVE", _request_character_save))
+	actions.add_child(_make_action_button("SAVE AS", _request_character_save))
 	actions.add_child(_make_action_button("LOAD", _request_character_load))
 	return panel
 
@@ -306,12 +308,20 @@ func _build_dialogs() -> void:
 	add_child(regiment_load_dialog)
 
 	character_save_dialog = FileDialog.new()
-	character_save_dialog.title = "Save OWCA Character"
+	character_save_dialog.title = "Save Character JSON As"
 	character_save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	character_save_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	character_save_dialog.filters = PackedStringArray(["*.owchar.json ; OWCA Character JSON"])
 	character_save_dialog.file_selected.connect(_save_character_to_path)
 	add_child(character_save_dialog)
+
+	character_duplicate_dialog = FileDialog.new()
+	character_duplicate_dialog.title = "Duplicate Character as New Record"
+	character_duplicate_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	character_duplicate_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	character_duplicate_dialog.filters = PackedStringArray(["*.owchar.json ; OWCA Character JSON"])
+	character_duplicate_dialog.file_selected.connect(_duplicate_character_to_path)
+	add_child(character_duplicate_dialog)
 
 	character_load_dialog = FileDialog.new()
 	character_load_dialog.title = "Load OWCA Character"
@@ -337,6 +347,11 @@ func _build_dialogs() -> void:
 	roll_overwrite_dialog.canceled.connect(_clear_pending_roll_action)
 	roll_overwrite_dialog.close_requested.connect(_clear_pending_roll_action)
 	add_child(roll_overwrite_dialog)
+
+	recovery_dialog = SaveRecoveryDialog.new()
+	recovery_dialog.recovery_requested.connect(_on_recovery_requested)
+	recovery_dialog.discard_temporary_requested.connect(_on_discard_temporary_requested)
+	add_child(recovery_dialog)
 
 
 func _refresh(rebuild_stage: bool = true) -> void:
@@ -899,15 +914,27 @@ func _render_review_stage() -> void:
 	heading.add_theme_font_size_override("font_size", 22)
 	heading.add_theme_color_override("font_color", COLOUR_GOOD if calculation.get("valid", false) else COLOUR_BAD)
 	stage_content.add_child(heading)
-	stage_content.add_child(_wrapped_label("Save the editable character as JSON, or export a two-page A4 field dossier. The dossier includes a PDF for printing plus two high-resolution PNG pages.", COLOUR_MUTED))
+	stage_content.add_child(_wrapped_label("Lifecycle: %s  |  Record ID: %s" % [state.workflow_state, state.document_id], COLOUR_MUTED))
+	stage_content.add_child(_wrapped_label("Save the editable character as JSON, duplicate it as a new identity, or export a two-page A4 field dossier. The dossier includes a PDF for printing plus two high-resolution PNG pages.", COLOUR_MUTED))
+	var lifecycle_text := "REOPEN AS DRAFT" if state.workflow_state == CharacterState.WORKFLOW_COMPLETE else "MARK CREATION COMPLETE"
+	if state.workflow_state == CharacterState.WORKFLOW_CAMPAIGN:
+		lifecycle_text = "CAMPAIGN ACTIVE"
+	var lifecycle_button := _make_action_button(lifecycle_text, _toggle_character_completion)
+	lifecycle_button.custom_minimum_size.y = 44
+	lifecycle_button.disabled = state.workflow_state == CharacterState.WORKFLOW_CAMPAIGN or (state.workflow_state != CharacterState.WORKFLOW_COMPLETE and not bool(calculation.get("valid", false)))
+	lifecycle_button.tooltip_text = "Resolve every validation error and remaining choice before completion." if lifecycle_button.disabled else "Persist an explicit lifecycle state in the character file."
+	stage_content.add_child(lifecycle_button)
 	var export_button := _make_action_button("EXPORT A4 PDF + PNG", _request_character_sheet_export)
 	export_button.custom_minimum_size.y = 48
 	export_button.disabled = not bool(calculation.get("valid", false))
 	export_button.tooltip_text = "Resolve every validation error and remaining choice before export." if export_button.disabled else "Creates one two-page A4 PDF and two 300-DPI PNG pages."
 	stage_content.add_child(export_button)
-	var save_button := _make_action_button("SAVE CHARACTER JSON", _request_character_save)
+	var save_button := _make_action_button("SAVE CHARACTER JSON AS", _request_character_save)
 	save_button.custom_minimum_size.y = 46
 	stage_content.add_child(save_button)
+	var duplicate_button := _make_action_button("DUPLICATE AS NEW CHARACTER RECORD", _request_character_duplicate)
+	duplicate_button.custom_minimum_size.y = 46
+	stage_content.add_child(duplicate_button)
 	var details := RichTextLabel.new()
 	details.bbcode_enabled = true
 	details.fit_content = true
@@ -956,6 +983,7 @@ func _render_summary() -> void:
 	var lines: Array[String] = []
 	lines.append("[font_size=20][color=#d5b35b]%s[/color][/font_size]" % _escape_bbcode(state.character_name))
 	lines.append("[color=#a5ad9d]Player:[/color] %s" % _escape_bbcode(state.player_name if not state.player_name.is_empty() else "-"))
+	lines.append("[color=#a5ad9d]Record:[/color] %s  |  [color=#a5ad9d]Lifecycle:[/color] %s" % [state.document_id.left(8), state.workflow_state])
 	lines.append("[color=#a5ad9d]Regiment:[/color] %s" % _escape_bbcode(str(calculation.get("regiment_name", "No regiment loaded"))))
 	lines.append("[color=#a5ad9d]Speciality:[/color] %s" % _escape_bbcode(str(calculation.get("speciality_name", "-"))))
 	lines.append("")
@@ -1019,7 +1047,7 @@ func _render_summary() -> void:
 
 
 func _render_status() -> void:
-	status_label.text = "VALID GUARDSMAN" if calculation.get("valid", false) else "INCOMPLETE / INVALID"
+	status_label.text = "%s  |  %s" % ["VALID GUARDSMAN" if calculation.get("valid", false) else "INCOMPLETE / INVALID", state.workflow_state.to_upper()]
 	status_label.add_theme_color_override("font_color", COLOUR_GOOD if calculation.get("valid", false) else COLOUR_BAD)
 	xp_label.text = "STARTING XP  %d REMAINING / %d" % [calculation.get("xp_remaining", 0), calculation.get("xp_budget", 600)]
 	xp_label.add_theme_color_override("font_color", COLOUR_GOLD)
@@ -1132,7 +1160,7 @@ func _roll_all_characteristics() -> void:
 	var summaries: Array[String] = []
 	for characteristic in CharacterState.CHARACTERISTIC_ORDER:
 		var result := results[characteristic] as Dictionary
-		state.base_characteristics[characteristic] = int(result["total"])
+		state.set_base_characteristic(characteristic, int(result["total"]))
 		creation_roll_details[characteristic] = creation_roller.describe(result)
 		summaries.append("%s %d" % [ABBREVIATIONS[characteristic], int(result["total"])])
 	action_message = "Rolled all base Characteristics: %s." % ", ".join(summaries)
@@ -1141,7 +1169,7 @@ func _roll_all_characteristics() -> void:
 
 func _roll_characteristic(characteristic: String) -> void:
 	var result := creation_roller.roll_characteristic()
-	state.base_characteristics[characteristic] = int(result["total"])
+	state.set_base_characteristic(characteristic, int(result["total"]))
 	creation_roll_details[characteristic] = creation_roller.describe(result)
 	action_message = "%s rolled %s." % [characteristic, creation_roll_details[characteristic]]
 	_refresh()
@@ -1149,7 +1177,7 @@ func _roll_characteristic(characteristic: String) -> void:
 
 func _roll_wounds() -> void:
 	var result := creation_roller.roll_wounds()
-	state.wounds_roll = int(result["total"])
+	state.set_wounds_roll(int(result["total"]))
 	creation_roll_details["wounds"] = creation_roller.describe(result)
 	action_message = "Wounds die rolled %s." % creation_roll_details["wounds"]
 	_refresh()
@@ -1157,7 +1185,7 @@ func _roll_wounds() -> void:
 
 func _roll_fate() -> void:
 	var result := creation_roller.roll_fate()
-	state.fate_roll = int(result["total"])
+	state.set_fate_roll(int(result["total"]))
 	creation_roll_details["fate"] = creation_roller.describe(result)
 	action_message = "Fate die rolled %s." % creation_roll_details["fate"]
 	_refresh()
@@ -1166,8 +1194,8 @@ func _roll_fate() -> void:
 func _roll_wounds_and_fate() -> void:
 	var wounds_result := creation_roller.roll_wounds()
 	var fate_result := creation_roller.roll_fate()
-	state.wounds_roll = int(wounds_result["total"])
-	state.fate_roll = int(fate_result["total"])
+	state.set_wounds_roll(int(wounds_result["total"]))
+	state.set_fate_roll(int(fate_result["total"]))
 	creation_roll_details["wounds"] = creation_roller.describe(wounds_result)
 	creation_roll_details["fate"] = creation_roller.describe(fate_result)
 	action_message = "Creation dice rolled: Wounds %s; Fate %s." % [creation_roll_details["wounds"], creation_roll_details["fate"]]
@@ -1176,18 +1204,12 @@ func _roll_wounds_and_fate() -> void:
 
 func _on_base_characteristic_changed(value: float, characteristic: String) -> void:
 	creation_roll_details.erase(characteristic)
-	if int(value) <= 0:
-		state.base_characteristics.erase(characteristic)
-	else:
-		state.base_characteristics[characteristic] = int(value)
+	state.set_base_characteristic(characteristic, int(value))
 	_refresh(false)
 
 
 func _on_manual_adjustment_changed(value: float, characteristic: String) -> void:
-	if int(value) == 0:
-		state.manual_adjustments.erase(characteristic)
-	else:
-		state.manual_adjustments[characteristic] = int(value)
+	state.set_manual_adjustment(characteristic, int(value))
 	_refresh(false)
 
 
@@ -1215,13 +1237,13 @@ func _on_multiple_choice_toggled(selected: bool, scope: String, choice_id: Strin
 
 func _on_wounds_roll_changed(value: float) -> void:
 	creation_roll_details.erase("wounds")
-	state.wounds_roll = int(value)
+	state.set_wounds_roll(int(value))
 	_refresh(false)
 
 
 func _on_fate_roll_changed(value: float) -> void:
 	creation_roll_details.erase("fate")
-	state.fate_roll = int(value)
+	state.set_fate_roll(int(value))
 	_refresh(false)
 
 
@@ -1278,6 +1300,11 @@ func _request_character_save() -> void:
 	character_save_dialog.popup_centered_ratio(0.72)
 
 
+func _request_character_duplicate() -> void:
+	character_duplicate_dialog.current_file = _safe_file_stem(state.character_name) + "_copy.owchar.json"
+	character_duplicate_dialog.popup_centered_ratio(0.72)
+
+
 func _request_character_load() -> void:
 	character_load_dialog.popup_centered_ratio(0.72)
 
@@ -1303,6 +1330,24 @@ func _save_character_to_path(path: String) -> void:
 	var result := character_persistence.save_character(save_path, state, calculation, character_repository)
 	action_message = str(result.get("message", ""))
 	_render_status()
+	_present_recovery_if_needed(save_path, result.get("recovery", {}) as Dictionary)
+
+
+func _duplicate_character_to_path(path: String) -> void:
+	var duplicate_state := CharacterState.new()
+	var clone_error := duplicate_state.from_dict(state.to_dict())
+	if clone_error != OK:
+		action_message = "Could not duplicate the current character state."
+		_render_status()
+		return
+	duplicate_state.interoperability_extensions = state.interoperability_extensions.duplicate(true)
+	duplicate_state.duplicate_identity()
+	var duplicate_calculation := calculator.calculate(duplicate_state, regiment_repository, character_repository)
+	var save_path := path if path.to_lower().ends_with(".json") else path + ".owchar.json"
+	var result := character_persistence.save_character(save_path, duplicate_state, duplicate_calculation, character_repository)
+	action_message = "%s New record ID: %s." % [str(result.get("message", "")), duplicate_state.document_id]
+	_render_status()
+	_present_recovery_if_needed(save_path, result.get("recovery", {}) as Dictionary)
 
 
 func _load_character_from_path(path: String) -> void:
@@ -1313,6 +1358,41 @@ func _load_character_from_path(path: String) -> void:
 		active_stage = "review"
 		(stage_buttons[active_stage] as Button).button_pressed = true
 	_refresh()
+	_present_recovery_if_needed(path, result.get("recovery", {}) as Dictionary)
+
+
+func _toggle_character_completion() -> void:
+	if state.workflow_state == CharacterState.WORKFLOW_CAMPAIGN:
+		action_message = "Campaign-active lifecycle is managed by the future Advance Character workflow."
+	elif state.workflow_state == CharacterState.WORKFLOW_COMPLETE:
+		action_message = "Character reopened as a draft."
+		state.mark_draft()
+	elif bool(calculation.get("valid", false)):
+		action_message = "Character marked creation complete. Save As to persist this lifecycle state."
+		state.mark_creation_complete()
+	else:
+		action_message = "Resolve every character error and choice before marking creation complete."
+	_refresh()
+
+
+func _present_recovery_if_needed(path: String, recovery: Dictionary) -> void:
+	if bool(recovery.get("recovery_available", false)):
+		recovery_dialog.present(path, recovery)
+
+
+func _on_recovery_requested(path: String, recovery_kind: String) -> void:
+	var result := character_persistence.recover_temporary(path) if recovery_kind == "temporary" else character_persistence.restore_backup(path)
+	action_message = str(result.get("message", "Recovery failed."))
+	if int(result.get("error", ERR_INVALID_DATA)) == OK:
+		_load_character_from_path(path)
+	else:
+		_render_status()
+
+
+func _on_discard_temporary_requested(path: String) -> void:
+	var result := character_persistence.discard_temporary(path)
+	action_message = str(result.get("message", "Could not discard temporary save."))
+	_render_status()
 
 
 func _export_character_sheet_to_path(path: String) -> void:

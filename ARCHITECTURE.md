@@ -94,7 +94,11 @@ The roller returns a transparent record to the UI. The UI shows the dice and wri
 
 ## Save-file policy
 
-Regiment and character files use a versioned envelope plus a versioned state object. When changing saved fields:
+Regiment and character files use a versioned envelope plus a versioned state object. The public field contract, stable-ID rules, calculated-preview boundary, and third-party extension namespace are defined in [JSON_INTEROPERABILITY.md](JSON_INTEROPERABILITY.md).
+
+`schema_version` governs public interoperability. Numeric envelope/state `version` fields govern OWCA migrations, while rules `content_version` fields identify the data used for calculation. Do not substitute one kind of version for another.
+
+When changing saved fields:
 
 1. increase the relevant state or file version;
 2. keep backward loading support when practical;
@@ -103,6 +107,10 @@ Regiment and character files use a versioned envelope plus a versioned state obj
 5. add a round-trip and backward-compatibility test.
 
 Calculated previews in saves are informational. They are never trusted as authoritative when loading.
+
+Every replacement save goes through `AtomicJsonStore`: write a same-directory temporary file, flush, reopen, parse, run the format/state validator, rotate the previous valid destination to `.bak`, and only then rename the candidate into place. Valid interrupted `.tmp` files are recovery candidates and must never be overwritten without an explicit player decision.
+
+Save As preserves the state's durable document ID. Duplicate creates a new identity and resets lifecycle to `draft`. Migration is reported to the player and remains in memory until an atomic save persists it.
 
 ## Source and copyright policy
 

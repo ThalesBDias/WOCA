@@ -87,6 +87,13 @@ Creation randomness belongs in `CharacterCreationRoller`, not a calculator or UI
 
 Treat saved JSON as a public API:
 
+- follow [JSON_INTEROPERABILITY.md](JSON_INTEROPERABILITY.md);
+- update the matching Draft 2020-12 JSON Schema and example file;
+- keep selections and entered values authoritative while calculated previews remain disposable;
+- preserve consumer-owned data only through the namespaced `extensions` object;
+- preserve `document_id` for Save As and generate a new one for Duplicate;
+- route replacement writes through `AtomicJsonStore` rather than direct `FileAccess.WRITE` calls;
+- report every migration/default and test that the previous valid file survives rejected or interrupted writes;
 - increase the relevant version;
 - preserve older readers when practical;
 - reject invalid container types;
@@ -94,7 +101,7 @@ Treat saved JSON as a public API:
 - test loading the previous version; and
 - test save/load round trips.
 
-Never rely on `calculated_preview` as authoritative state.
+Never rely on `calculated_preview` as authoritative state, and never silently repurpose an existing stable ID.
 
 ## UI changes
 

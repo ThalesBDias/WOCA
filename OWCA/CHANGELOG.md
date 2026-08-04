@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Added a living project roadmap covering JSON file safety, the weapon catalogue, character inventory, weapon modification, campaign advancement, editable journals and exports, and v1.0 stabilization.
+- Added the OWCA JSON interoperability contract with public semantic `schema_version` fields for regiment and character saves.
+- Added Draft 2020-12 schemas for `.owreg.json` and `.owchar.json` files, plus documented required and optional fields, stable-ID rules, and compatibility policy.
+- Added fuller non-authoritative calculated previews for regiment and character consumers, including stable-ID Skills, Talents, equipment, derived totals, choices, sources, and validation messages.
+- Added an opaque namespaced `extensions` object that external tools can use for their own data and that OWCA preserves through load/save cycles.
+- Added compatibility coverage for legacy files, extension round trips, preview isolation, malformed extension containers, and unsupported future schema majors.
+- Added durable UUID document identities and explicit draft/completed lifecycle state to regiment and character records.
+- Added Save As identity preservation and Duplicate actions that create new draft record identities.
+- Added validated atomic JSON replacement, automatic last-valid `.bak` files, interrupted `.tmp` detection, and explicit recovery prompts.
+- Added player-facing migration reports for legacy envelopes, state versions, generated IDs, lifecycle defaults, and advancement defaults.
+- Added regression coverage for atomic replacement, backup rotation, temporary recovery, corrupt-target recovery, and post-write validation failure.
 - Added the complete Core Rulebook Talent catalogue with 124 browsable entries and supported specialisations across all three Tiers.
 - Added Talent search plus Tier, Aptitude, prerequisite-status, and purchase-status filters.
 - Added concise effect summaries, calculated Aptitude-based XP costs, prerequisite state, and explicit blocking reasons to every Talent card.
@@ -16,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
+- Regiment saves now use envelope/state version 2, character saves use envelope/state version 3, and both remain compatible with their earlier supported versions.
+- The public interoperability schema is now `1.1.0`.
 - The advancement rules content version is now `0.5.0-core-talents`.
 - OWCA now displays specialist and variable-cost Talents it cannot safely purchase instead of omitting them from the catalogue.
 

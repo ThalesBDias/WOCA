@@ -40,10 +40,14 @@ var choices_list: VBoxContainer
 var points_label: Label
 var doctrine_label: Label
 var validity_label: Label
+var lifecycle_label: Label
+var lifecycle_button: Button
 var notices_text: RichTextLabel
 var save_dialog: FileDialog
+var duplicate_dialog: FileDialog
 var load_dialog: FileDialog
 var export_dialog: FileDialog
+var recovery_dialog: SaveRecoveryDialog
 
 
 func _ready() -> void:
@@ -121,7 +125,7 @@ func _build_header() -> Control:
 	row.add_child(actions)
 	actions.add_child(_make_action_button("HOME", _return_home))
 	actions.add_child(_make_action_button("13TH VARANOX", _load_example))
-	actions.add_child(_make_action_button("SAVE", _request_save))
+	actions.add_child(_make_action_button("SAVE AS", _request_save))
 	actions.add_child(_make_action_button("LOAD", _request_load))
 	actions.add_child(_make_action_button("EXPORT", _request_export))
 	return panel
@@ -208,7 +212,7 @@ func _build_workspace() -> Control:
 
 func _build_status_panel() -> Control:
 	var panel := _make_panel(COLOUR_PANEL_ALT, COLOUR_BORDER, 8)
-	panel.custom_minimum_size.y = 122
+	panel.custom_minimum_size.y = 158
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 18)
 	panel.add_child(row)
@@ -225,6 +229,21 @@ func _build_status_panel() -> Control:
 	validity_label = Label.new()
 	validity_label.add_theme_font_size_override("font_size", 13)
 	metrics.add_child(validity_label)
+	lifecycle_label = Label.new()
+	lifecycle_label.add_theme_font_size_override("font_size", 11)
+	lifecycle_label.add_theme_color_override("font_color", COLOUR_MUTED)
+	metrics.add_child(lifecycle_label)
+	var record_actions := HBoxContainer.new()
+	record_actions.add_theme_constant_override("separation", 5)
+	metrics.add_child(record_actions)
+	lifecycle_button = _make_action_button("MARK COMPLETE", _toggle_completion)
+	lifecycle_button.custom_minimum_size.y = 30
+	lifecycle_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	record_actions.add_child(lifecycle_button)
+	var duplicate_button := _make_action_button("DUPLICATE", _request_duplicate)
+	duplicate_button.custom_minimum_size.y = 30
+	duplicate_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	record_actions.add_child(duplicate_button)
 
 	var divider := VSeparator.new()
 	row.add_child(divider)
@@ -239,12 +258,20 @@ func _build_status_panel() -> Control:
 
 func _build_dialogs() -> void:
 	save_dialog = FileDialog.new()
-	save_dialog.title = "Save Regiment JSON"
+	save_dialog.title = "Save Regiment JSON As"
 	save_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
 	save_dialog.access = FileDialog.ACCESS_FILESYSTEM
 	save_dialog.filters = PackedStringArray(["*.owreg.json ; OWCA Regiment JSON"])
 	save_dialog.file_selected.connect(_save_to_path)
 	add_child(save_dialog)
+
+	duplicate_dialog = FileDialog.new()
+	duplicate_dialog.title = "Duplicate Regiment as New Record"
+	duplicate_dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+	duplicate_dialog.access = FileDialog.ACCESS_FILESYSTEM
+	duplicate_dialog.filters = PackedStringArray(["*.owreg.json ; OWCA Regiment JSON"])
+	duplicate_dialog.file_selected.connect(_duplicate_to_path)
+	add_child(duplicate_dialog)
 
 	load_dialog = FileDialog.new()
 	load_dialog.title = "Load Regiment JSON"
@@ -261,6 +288,11 @@ func _build_dialogs() -> void:
 	export_dialog.filters = PackedStringArray(["*.txt ; Text dossier"])
 	export_dialog.file_selected.connect(_export_to_path)
 	add_child(export_dialog)
+
+	recovery_dialog = SaveRecoveryDialog.new()
+	recovery_dialog.recovery_requested.connect(_on_recovery_requested)
+	recovery_dialog.discard_temporary_requested.connect(_on_discard_temporary_requested)
+	add_child(recovery_dialog)
 
 
 func _refresh() -> void:
@@ -342,6 +374,7 @@ func _build_option_card(option: Dictionary, rule: Dictionary) -> Control:
 func _render_summary() -> void:
 	var lines: Array[String] = []
 	lines.append("[font_size=20][color=#d5b35b]%s[/color][/font_size]" % _escape_bbcode(state.regiment_name))
+	lines.append("[color=#a5ad9d]Record:[/color] %s  |  [color=#a5ad9d]Lifecycle:[/color] %s" % [state.document_id.left(8), state.workflow_state])
 	lines.append("")
 	for category in CATEGORY_ORDER:
 		var names: Array[String] = []
@@ -462,6 +495,9 @@ func _render_status() -> void:
 	doctrine_label.add_theme_color_override("font_color", COLOUR_BAD if int(calculation["optional_doctrines_used"]) > int(calculation["optional_doctrines_maximum"]) else COLOUR_TEXT)
 	validity_label.text = "VALID REGIMENT" if calculation["valid"] else "INCOMPLETE / INVALID"
 	validity_label.add_theme_color_override("font_color", COLOUR_GOOD if calculation["valid"] else COLOUR_BAD)
+	lifecycle_label.text = "LIFECYCLE  %s" % state.workflow_state.to_upper()
+	lifecycle_button.text = "REOPEN DRAFT" if state.workflow_state == RegimentState.WORKFLOW_COMPLETE else "MARK COMPLETE"
+	lifecycle_button.disabled = state.workflow_state != RegimentState.WORKFLOW_COMPLETE and not bool(calculation["valid"])
 
 	var notices: Array[String] = []
 	if not action_message.is_empty():
@@ -519,6 +555,11 @@ func _request_save() -> void:
 	save_dialog.popup_centered_ratio(0.72)
 
 
+func _request_duplicate() -> void:
+	duplicate_dialog.current_file = _safe_file_stem(state.regiment_name) + "_copy.owreg.json"
+	duplicate_dialog.popup_centered_ratio(0.72)
+
+
 func _request_load() -> void:
 	load_dialog.popup_centered_ratio(0.72)
 
@@ -533,11 +574,61 @@ func _save_to_path(path: String) -> void:
 	var result := persistence.save_regiment(save_path, state, repository)
 	action_message = str(result["message"])
 	_render_status()
+	_present_recovery_if_needed(save_path, result.get("recovery", {}) as Dictionary)
+
+
+func _duplicate_to_path(path: String) -> void:
+	var duplicate_state := RegimentState.new()
+	var clone_error := duplicate_state.from_dict(state.to_dict())
+	if clone_error != OK:
+		action_message = "Could not duplicate the current regiment state."
+		_render_status()
+		return
+	duplicate_state.interoperability_extensions = state.interoperability_extensions.duplicate(true)
+	duplicate_state.duplicate_identity()
+	var save_path := path if path.to_lower().ends_with(".json") else path + ".owreg.json"
+	var result := persistence.save_regiment(save_path, duplicate_state, repository)
+	action_message = "%s New record ID: %s." % [str(result.get("message", "")), duplicate_state.document_id]
+	_render_status()
+	_present_recovery_if_needed(save_path, result.get("recovery", {}) as Dictionary)
 
 
 func _load_from_path(path: String) -> void:
 	var result := persistence.load_regiment(path, state, repository)
 	action_message = str(result["message"])
+	_render_status()
+	_present_recovery_if_needed(path, result.get("recovery", {}) as Dictionary)
+
+
+func _toggle_completion() -> void:
+	if state.workflow_state == RegimentState.WORKFLOW_COMPLETE:
+		action_message = "Regiment reopened as a draft."
+		state.mark_draft()
+	elif bool(calculation.get("valid", false)):
+		action_message = "Regiment marked creation complete. Save As to persist this lifecycle state."
+		state.mark_creation_complete()
+	else:
+		action_message = "Resolve every regiment error and choice before marking it complete."
+	_refresh()
+
+
+func _present_recovery_if_needed(path: String, recovery: Dictionary) -> void:
+	if bool(recovery.get("recovery_available", false)):
+		recovery_dialog.present(path, recovery)
+
+
+func _on_recovery_requested(path: String, recovery_kind: String) -> void:
+	var result := persistence.recover_temporary(path, repository) if recovery_kind == "temporary" else persistence.restore_backup(path, repository)
+	action_message = str(result.get("message", "Recovery failed."))
+	if int(result.get("error", ERR_INVALID_DATA)) == OK:
+		_load_from_path(path)
+	else:
+		_render_status()
+
+
+func _on_discard_temporary_requested(path: String) -> void:
+	var result := persistence.discard_temporary(path)
+	action_message = str(result.get("message", "Could not discard temporary save."))
 	_render_status()
 
 
