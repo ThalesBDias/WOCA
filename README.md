@@ -73,6 +73,7 @@ godot --headless --path . --script res://OWCA/tests/character_ui_layout_test.gd
 godot --headless --path . --script res://OWCA/tests/character_creation_roller_test.gd
 godot --headless --path . --script res://OWCA/tests/character_creation_roll_ui_test.gd
 godot --headless --path . --script res://OWCA/tests/music_manager_test.gd
+godot --headless --path . --script res://OWCA/tests/app_version_ui_test.gd
 ```
 
 The character-sheet visual test needs a real renderer because Godot's Windows headless display driver is a dummy. It runs minimized and writes the example output to the path in `OWCA_PDF_OUTPUT`:

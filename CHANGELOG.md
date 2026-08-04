@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-03
+
 ### Added
 
 - Added optional character-creation rolls for all nine base Characteristics (`2d10 + 20`), Wounds (`1d5`), and Fate (`1d10`), while keeping every value manually editable.
@@ -13,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Added deterministic creation-roll service tests, UI behavior tests, and responsive roll-control coverage.
 - Added `ARCHITECTURE.md` and `CONTRIBUTING.md` with layer boundaries, data flow, commenting standards, save-version policy, rules-data guidance, and contributor checklists.
 - Expanded Godot `##` documentation across state, repositories, calculators, persistence, and advancement processing.
-- Added “War Grinder” as a persistent looping background soundtrack, with a landing-page toggle and global `M` shortcut.
+- Added **War Grinder** as a persistent looping background soundtrack, with a landing-page toggle and global `M` shortcut.
 - Added a headless regression test for soundtrack import, looping, volume, pause, and resume behavior.
 - Added a **Spend Starting XP** character-creation stage with separate Characteristic, Skill, and Talent browsers.
 - Added the Core Aptitude-matched cost tables for all four Characteristic ranks, all four Skill ranks, and all three Talent tiers.
@@ -38,13 +40,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - Fixed long advancement names pushing the Buy button outside the visible centre panel and requiring horizontal scrolling.
+- Fixed the landing page and Regiment Creator continuing to display `v0.3` after the application version changed; both now read the version from `project.godot`.
 
 ### Known limitations
 
 - The v0.4 Talent browser is a focused Guardsman testing catalog, not every Talent in the Core Rulebook.
 - Character-sheet PDFs are image-based; their text is not selectable.
 - Only the five Core Guardsman Specialities are available for character testing.
-- OWCA intentionally does not roll dice.
+- OWCA only rolls optional character-creation values; attacks, damage, tests, and other gameplay dice remain outside the app.
 
 ## [0.3.0] - 2026-08-02
 
