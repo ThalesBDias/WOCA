@@ -1,4 +1,4 @@
-# Only War Character Assistant v0.4 development
+# Only War Character Assistant v0.5 development
 
 This module is a data-driven Godot 4 regiment and Guardsman creation assistant. Regiment creation includes every Core Rulebook option in the five supported categories: 8 Home Worlds, 9 Commanding Officers, 8 Regiment Types, 7 Training Doctrines, and 7 Equipment Doctrines. The current character-creation testing slice implements the five Core Guardsman Specialities: Heavy Gunner, Medic, Operator, Sergeant, and Weapon Specialist. Entries were checked against the supplied Only War Core Rulebook PDF; content files record printed book pages rather than PDF viewer indices.
 
@@ -19,7 +19,7 @@ OWCA/
   data/
     regiment_options.json       Regiment rules and catalog data
     guardsman_specialities.json Five Core Guardsman starting packages
-    guardsman_advancements.json XP costs, Aptitudes, prerequisites, and test catalog
+    guardsman_advancements.json XP costs, Aptitudes, prerequisites, and complete Core Talent catalog
     regiment_options.schema.json Formal JSON Schema (Draft 2020-12)
     schema.md                    Data contract and extension guide
   examples/
@@ -54,7 +54,10 @@ OWCA/
     character_sheet_export_test.gd Normal-renderer PDF/PNG visual test
     character_creation_roller_test.gd Deterministic creation-dice tests
     character_creation_roll_ui_test.gd Roll controls and overwrite-safety tests
+    character_ui_layout_test.gd Responsive character-workflow layout tests
     music_manager_test.gd      Background-music import and control test
+    app_version_ui_test.gd     Visible application-version regression test
+    talent_browser_ui_test.gd  Complete Talent search and filter tests
 ```
 
 ## Run
@@ -74,6 +77,7 @@ godot --headless --path . --script res://OWCA/tests/character_creation_roller_te
 godot --headless --path . --script res://OWCA/tests/character_creation_roll_ui_test.gd
 godot --headless --path . --script res://OWCA/tests/music_manager_test.gd
 godot --headless --path . --script res://OWCA/tests/app_version_ui_test.gd
+godot --headless --path . --script res://OWCA/tests/talent_browser_ui_test.gd
 ```
 
 The character-sheet visual test needs a real renderer because Godot's Windows headless display driver is a dummy. It runs minimized and writes the example output to the path in `OWCA_PDF_OUTPUT`:
@@ -92,7 +96,7 @@ The Guardsman Character Creator loads an `.owreg.json` regiment, accepts manuall
 
 Character creation also provides optional rolls for all nine base Characteristics (`2d10 + 20`), Wounds (`1d5`), and Fate (`1d10`). Every result shows its individual dice, remains manually editable, and requires confirmation before replacing an entered value. Manual edits clear the transient OWCA roll breakdown. Gameplay tests, attacks, damage, and ammunition use remain at the table.
 
-The development v0.4 slice adds an ordered starting-XP ledger. It calculates Characteristic, Skill, and Talent costs from matching Aptitudes; enforces sequential Characteristic and Skill ranks; checks Talent prerequisites; prevents overspending; and recalculates later purchases when an earlier one is removed. Character saves preserve the ledger and remain backward-compatible with v0.3 files. All nine Characteristics and the Core Skill categories used by this project are available. Talents are deliberately limited to the five Guardsman Specialities' Core recommended advances plus the Weapon Training groups needed to test their prerequisite chains. This is not yet a complete Core Talent browser.
+The v0.5 development slice expands the ordered starting-XP ledger into a complete Core Talent browser. Its 124 entries and supported specialisations can be searched by name, brief effect, or prerequisite and filtered by Tier, Aptitude, prerequisite state, and purchase state. Every Talent displays its calculated Aptitude-based XP cost, short rules summary, prerequisites, availability reason, and Core Rulebook reference. Specialist, implant-dependent, Psy Rating, and variable Logistics-cost Talents remain visible but are disabled whenever OWCA cannot represent their required choice or state safely.
 
 The character workflow is responsive down to a 960x650 minimum window. Advancement actions remain inside their cards, horizontal stage scrolling is disabled, and the live-summary column automatically hides below 1100 pixels so the active form keeps usable space.
 

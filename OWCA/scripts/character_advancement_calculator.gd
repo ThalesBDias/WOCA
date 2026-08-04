@@ -109,6 +109,9 @@ func _build_option(advance_id: String, result: Dictionary, repository: Character
 	var rank_label := ""
 	var available := true
 	var reason := ""
+	var missing_prerequisites: Array[String] = []
+	var purchase_supported := bool(entry.get("purchase_supported", true))
+	var unsupported_reason := str(entry.get("unsupported_reason", "This Talent requires a choice that OWCA cannot record yet."))
 	match kind:
 		"characteristic":
 			rank_index = int(purchase_counts.get(advance_id, 0))
@@ -131,13 +134,17 @@ func _build_option(advance_id: String, result: Dictionary, repository: Character
 			if known > 0 and not bool(entry.get("repeatable", false)):
 				available = false
 				reason = "Already known."
-			var missing := _missing_prerequisites(entry, result)
-			if available and not missing.is_empty():
+			missing_prerequisites = _missing_prerequisites(entry, result)
+			if available and not missing_prerequisites.is_empty():
 				available = false
-				reason = "Requires %s." % ", ".join(missing)
+				reason = "Requires %s." % ", ".join(missing_prerequisites)
+			if available and not purchase_supported:
+				available = false
+				reason = unsupported_reason
 
 	var cost := _get_cost(kind, rank_index, matched.size(), repository)
-	if available and cost > remaining:
+	var affordable := cost <= remaining
+	if available and not affordable:
 		available = false
 		reason = "Needs %d XP; %d XP remains." % [cost, remaining]
 	var recommended_for := entry.get("recommended_for", []) as Array
@@ -148,10 +155,18 @@ func _build_option(advance_id: String, result: Dictionary, repository: Character
 		"entry_id": entry_id,
 		"name": str(entry.get("name", entry_id.capitalize())),
 		"rank_label": rank_label,
+		"tier": int(entry.get("tier", 0)),
 		"cost": cost,
 		"aptitudes": (entry.get("aptitudes", []) as Array).duplicate(),
 		"matched_aptitudes": matched,
 		"match_count": matched.size(),
+		"summary": str(entry.get("summary", "")),
+		"specialist": bool(entry.get("specialist", false)),
+		"purchase_supported": purchase_supported,
+		"unsupported_reason": unsupported_reason if not purchase_supported else "",
+		"missing_prerequisites": missing_prerequisites,
+		"prerequisites_met": missing_prerequisites.is_empty(),
+		"affordable": affordable,
 		"available": available,
 		"reason": reason,
 		"recommended": str(result.get("speciality", {}).get("id", "")) in recommended_for,
@@ -188,6 +203,7 @@ func _missing_prerequisites(entry: Dictionary, result: Dictionary) -> Array[Stri
 	var characteristics := result.get("characteristics", {}) as Dictionary
 	var skills := result.get("skills", {}) as Dictionary
 	var talents := result.get("talents", {}) as Dictionary
+	var aptitudes := result.get("aptitudes", {}) as Dictionary
 	for requirement_value: Variant in entry.get("prerequisites", []):
 		if not requirement_value is Dictionary:
 			continue
@@ -198,6 +214,11 @@ func _missing_prerequisites(entry: Dictionary, result: Dictionary) -> Array[Stri
 				met = int(characteristics.get(str(requirement.get("id", "")), 0)) >= int(requirement.get("minimum", 0))
 			"skill":
 				met = int(skills.get(str(requirement.get("id", "")), 0)) >= int(requirement.get("minimum_rank", 1))
+			"skill_any":
+				for skill_id: Variant in requirement.get("ids", []):
+					if int(skills.get(str(skill_id), 0)) >= int(requirement.get("minimum_rank", 1)):
+						met = true
+						break
 			"talent":
 				met = int(talents.get(str(requirement.get("id", "")), 0)) > 0
 			"talent_any":
@@ -211,11 +232,23 @@ func _missing_prerequisites(entry: Dictionary, result: Dictionary) -> Array[Stri
 					if str(talent_id).begins_with(str(requirement.get("prefix", ""))) and int(talents[talent_id]) > 0:
 						count += 1
 				met = count >= int(requirement.get("minimum", 1))
+			"talent_prefix":
+				for talent_id: Variant in talents:
+					if str(talent_id).begins_with(str(requirement.get("prefix", ""))) and int(talents[talent_id]) > 0:
+						met = true
+						break
 			"skill_prefix":
 				for skill_id: Variant in skills:
 					if str(skill_id).begins_with(str(requirement.get("prefix", ""))) and int(skills[skill_id]) >= int(requirement.get("minimum_rank", 1)):
 						met = true
 						break
+			"aptitude":
+				met = int(aptitudes.get(str(requirement.get("id", "")), 0)) > 0
+			"special":
+				# Implants, Psy Rating, and similar state are intentionally not
+				# guessed from prose or equipment names. A future subsystem must
+				# expose them explicitly before these prerequisites can pass.
+				met = false
 		if not met:
 			missing.append(str(requirement.get("label", "prerequisite")))
 	return missing

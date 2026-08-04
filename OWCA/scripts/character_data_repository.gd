@@ -178,8 +178,23 @@ func _validate_advancement_data() -> String:
 			for aptitude: Variant in aptitudes:
 				if not valid_aptitudes.has(str(aptitude)):
 					return "Advancement '%s:%s' uses unknown Aptitude '%s'." % [kind, entry_id, aptitude]
-			if kind == "talents" and int(entry.get("tier", 0)) not in [1, 2, 3]:
-				return "Talent '%s' needs a tier from 1 to 3." % entry_id
+			if kind == "talents":
+				if int(entry.get("tier", 0)) not in [1, 2, 3]:
+					return "Talent '%s' needs a tier from 1 to 3." % entry_id
+				if str(entry.get("summary", "")).is_empty():
+					return "Talent '%s' needs a brief effect summary." % entry_id
+				if not bool(entry.get("purchase_supported", true)) and str(entry.get("unsupported_reason", "")).is_empty():
+					return "Unsupported Talent '%s' needs a player-facing reason." % entry_id
+				if not entry.get("prerequisites", []) is Array:
+					return "Talent '%s' prerequisites must be an array." % entry_id
+				for requirement_value: Variant in entry.get("prerequisites", []):
+					if not requirement_value is Dictionary:
+						return "Talent '%s' contains a non-object prerequisite." % entry_id
+					var requirement := requirement_value as Dictionary
+					if str(requirement.get("type", "")) not in ["aptitude", "characteristic", "skill", "skill_any", "skill_prefix", "special", "talent", "talent_any", "talent_prefix", "talent_prefix_count"]:
+						return "Talent '%s' uses unsupported prerequisite type '%s'." % [entry_id, requirement.get("type", "")]
+					if str(requirement.get("label", "")).is_empty():
+						return "Talent '%s' has a prerequisite without a label." % entry_id
 	return ""
 
 

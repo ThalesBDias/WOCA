@@ -2,6 +2,8 @@ extends SceneTree
 
 ## Run with: godot --headless --path . --script res://OWCA/tests/character_calculator_test.gd
 
+var _failures := 0
+
 
 func _init() -> void:
 	var regiment_repository := RegimentDataRepository.new()
@@ -10,7 +12,12 @@ func _init() -> void:
 	_assert_equal(character_repository.load_data(), OK, "Guardsman Speciality catalog loads")
 	_assert_equal(character_repository.get_advancement_entries("characteristics").size(), 9, "nine Characteristic advancement tracks")
 	_assert_true(character_repository.get_advancement_entries("skills").size() >= 40, "Core Skill advancement catalog loads")
-	_assert_true(character_repository.get_advancement_entries("talents").size() >= 50, "curated Guardsman Talent advancement catalog loads")
+	var talent_catalog := character_repository.get_advancement_entries("talents")
+	_assert_equal(talent_catalog.size(), 124, "complete Core Talent catalog and supported specialisations load")
+	for talent_id: Variant in talent_catalog:
+		_assert_true(not str((talent_catalog[talent_id] as Dictionary).get("summary", "")).is_empty(), "Talent '%s' has a brief effect summary" % talent_id)
+	for expected_talent in ["berserk_charge", "combat_master", "never_die", "warp_lock", "whirlwind_of_death"]:
+		_assert_true(talent_catalog.has(expected_talent), "complete catalog includes %s" % expected_talent)
 	_assert_equal(character_repository.get_specialities().size(), 5, "five Core Guardsman Specialities")
 	_assert_speciality(character_repository, "heavy_gunner", 10, 4)
 	_assert_speciality(character_repository, "medic", 8, 3)
@@ -119,6 +126,21 @@ func _init() -> void:
 	xp_state.set_choice("speciality", "operator_weapon_training", "las")
 	var xp_result := calculator.calculate(xp_state, regiment_repository, character_repository)
 	_assert_true(xp_result["advancement_ready"], "complete character can spend XP")
+	var enemy_option := _entry_by_id(xp_result["advancement_options"], "talent:enemy")
+	_assert_true(not enemy_option["purchase_supported"], "GM-awarded Enemy Talent is listed but not purchasable")
+	_assert_true(not enemy_option["available"], "unsupported specialist Talent is disabled")
+	_assert_true(not str(enemy_option["summary"]).is_empty(), "Talent option exposes a brief effect summary")
+	var psychic_power_option := _entry_by_id(xp_result["advancement_options"], "talent:psychic_power")
+	_assert_true(not psychic_power_option["prerequisites_met"], "Aptitude prerequisite is evaluated")
+	_assert_true("Psyker" in psychic_power_option["missing_prerequisites"], "missing Aptitude is explained")
+	var step_aside_option := _entry_by_id(xp_result["advancement_options"], "talent:step_aside")
+	_assert_true(not step_aside_option["prerequisites_met"], "Dodge-or-Parry prerequisite starts unmet without either Skill")
+	_assert_true("Dodge or Parry" in step_aside_option["missing_prerequisites"], "alternative Skill prerequisite is explained")
+	var step_state := CharacterState.new()
+	_assert_equal(step_state.from_dict(xp_state.to_dict()), OK, "clone alternative Skill prerequisite state")
+	step_state.purchase_advance("skill:dodge")
+	var step_result := calculator.calculate(step_state, regiment_repository, character_repository)
+	_assert_true(_entry_by_id(step_result["advancement_options"], "talent:step_aside")["prerequisites_met"], "Dodge-or-Parry prerequisite accepts either trained Skill")
 	var weapon_tech_before := _entry_by_id(xp_result["advancement_options"], "talent:weapon_tech")
 	_assert_true(not weapon_tech_before["available"], "Weapon-Tech is locked before Tech-Use +10")
 	xp_state.purchase_advance("skill:tech_use")
@@ -183,6 +205,10 @@ func _init() -> void:
 	_assert_equal(legacy_state.from_dict(legacy_data), OK, "version 1 character state remains loadable")
 	_assert_true(legacy_state.purchased_advances.is_empty(), "legacy character starts with an empty XP ledger")
 
+	if _failures > 0:
+		printerr("OWCA character calculator tests failed: %d assertion(s)." % _failures)
+		quit(1)
+		return
 	print("OWCA character calculator tests passed.")
 	quit(0)
 
@@ -238,10 +264,10 @@ func _assert_speciality(repository: CharacterDataRepository, speciality_id: Stri
 func _assert_true(condition: bool, label: String) -> void:
 	if not condition:
 		printerr("FAILED: %s" % label)
-		quit(1)
+		_failures += 1
 
 
 func _assert_equal(actual: Variant, expected: Variant, label: String) -> void:
 	if actual != expected:
 		printerr("FAILED: %s (expected %s, got %s)" % [label, expected, actual])
-		quit(1)
+		_failures += 1

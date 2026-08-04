@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Added the complete Core Rulebook Talent catalogue with 124 browsable entries and supported specialisations across all three Tiers.
+- Added Talent search plus Tier, Aptitude, prerequisite-status, and purchase-status filters.
+- Added concise effect summaries, calculated Aptitude-based XP costs, prerequisite state, and explicit blocking reasons to every Talent card.
+- Added prerequisite evaluation for Aptitudes, alternative Skills, Talent prefixes, and explicit special-state requirements.
+- Added regression coverage for complete Talent data, new prerequisite forms, browser search, browser filters, and unsupported specialist choices.
+
+### Changed
+
+- The advancement rules content version is now `0.5.0-core-talents`.
+- OWCA now displays specialist and variable-cost Talents it cannot safely purchase instead of omitting them from the catalogue.
+
+### Known limitations
+
+- Specialist choices such as Peer, Hatred, Resistance, Psychic Power, Mastery, and individual Exotic Weapons are visible and priced but disabled until their selected specialisation can be stored safely.
+- Implant, Psy Rating, and Squad Logistics prerequisites are displayed but remain unmet because those character-state systems are outside the current Guardsman slice.
+
 ## [0.4.0] - 2026-08-03
 
 ### Added
